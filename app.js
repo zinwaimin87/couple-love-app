@@ -55,6 +55,7 @@ function getOwner(){
 
 function saveOwnerSettings(){
   const gmail=($('ownerGmail')?.value||'').trim().toLowerCase();
+  const partnerGmail=($('partnerGmail')?.value||'').trim().toLowerCase();
   const name=($('ownerName')?.value||'').trim();
   const err=$('ownerError');
 
@@ -68,12 +69,26 @@ function saveOwnerSettings(){
   }
 
   const old=getOwner()||{};
+  if(partnerGmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(partnerGmail)){
+    if(err){
+      err.textContent='Partner Gmail address မှန်ကန်စွာ ထည့်ပါ။';
+      err.style.display='block';
+      err.style.color='#fecaca';
+    }
+    return;
+  }
+
   localStorage.setItem('coupleOwner',JSON.stringify({
     ...old,
     gmail,
+    partnerGmail,
     name,
     updatedAt:new Date().toISOString()
   }));
+
+  if(window.cloudSaveCoupleData && window.firebaseUser?.()){
+    window.cloudSaveCoupleData(getLocalCoupleData()).catch(e=>console.warn('Owner metadata sync:',e));
+  }
 
   if(err){
     err.textContent='✓ Owner Gmail ကို သိမ်းပြီးပါပြီ။';
@@ -87,6 +102,7 @@ function renderOwnerSettings(){
   const o=getOwner();
 
   if($('ownerGmail')) $('ownerGmail').value=o?.gmail||'';
+  if($('partnerGmail')) $('partnerGmail').value=o?.partnerGmail||'';
   if($('ownerName')) $('ownerName').value=o?.name||'';
 
   if($('ownerStatus')){
