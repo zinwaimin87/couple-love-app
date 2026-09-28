@@ -238,16 +238,30 @@ async function applyAuthenticatedOwner(user){
     return;
   }
 
-  const isOwnerAccount = !owner.firebaseUid || user.uid === owner.firebaseUid;
+  const isOwnerEmail = !!saved && email === saved;
+  const isPartnerEmail = !!partner && email === partner;
+  const isOwnerAccount = isOwnerEmail && (!owner.firebaseUid || user.uid === owner.firebaseUid);
+
+  if(!isOwnerEmail && !isPartnerEmail){
+    const errorEl = document.getElementById("ownerError");
+    if(errorEl){
+      errorEl.textContent = "ဒီ Google Gmail က Owner/Partner Gmail စာရင်းထဲမှာ မရှိပါ။";
+      errorEl.style.display = "block";
+      errorEl.style.color = "#fecaca";
+    }
+    await signOut(auth);
+    return;
+  }
   const next = {
     ...owner,
-    gmail: isOwnerAccount ? (saved || email) : (owner.gmail || saved || ""),
+    gmail: owner.gmail || (isOwnerAccount ? email : ""),
+    partnerGmail: owner.partnerGmail || (isPartnerEmail ? email : ""),
     email,
     name: user.displayName || owner.name || "Owner",
     photoURL: user.photoURL || "",
     firebaseConnected: true,
     firebaseUid: isOwnerAccount ? user.uid : (owner.firebaseUid || ""),
-    partnerFirebaseUid: isOwnerAccount ? (owner.partnerFirebaseUid || "") : user.uid,
+    partnerFirebaseUid: isPartnerEmail ? user.uid : (owner.partnerFirebaseUid || ""),
     connectedAt: new Date().toISOString()
   };
 
@@ -343,20 +357,33 @@ window.cloudMigrateLegacyMessages = async function(messages){
 
 window.cloudSaveCoupleData = async function(localData){
   const user = currentUser;
-  const uid = cloudUid || (user && user.uid);
-  if (!user || !uid) return {ok:false, reason:"not-authenticated"};
+  if (!user) return {ok:false, reason:"not-authenticated"};
+
+  let uid = cloudUid || user.uid;
+  if(!cloudUid){
+    cloudUid = await resolveCloudUid(user);
+    uid = cloudUid || user.uid;
+  }
 
   const payload = JSON.parse(JSON.stringify(localData || {}));
   delete payload.owner;
-
-  // Chat messages are stored in the dedicated subcollection now.
-  // Keep only a tiny migration marker in the main couple document.
   delete payload.messages;
+
+  const existing = await getDoc(doc(db, "couples", uid));
+  const remote = existing.exists() ? existing.data() : {};
+  const owner = getSavedOwner();
+
+  // Always preserve the real couple owner UID, even when the partner is
+  // the account currently writing the shared document.
+  const ownerUid = remote.ownerUid || owner.firebaseUid || (emailKey(user.email) === emailKey(owner.gmail) ? user.uid : uid);
+  const ownerGmail = emailKey(remote.ownerGmail || owner.gmail || "");
+  const partnerGmail = emailKey(remote.partnerGmail || owner.partnerGmail || "");
 
   await setDoc(doc(db, "couples", uid), {
     ...payload,
-    ownerUid: getSavedOwner().firebaseUid || uid,
-    partnerGmail: emailKey(getSavedOwner().partnerGmail || ""),
+    ownerUid,
+    ownerGmail,
+    partnerGmail,
     updatedAt: serverTimestamp()
   }, {merge:true});
 
@@ -365,8 +392,10 @@ window.cloudSaveCoupleData = async function(localData){
 
 window.cloudLoadCoupleData = async function(){
   const user = currentUser;
-  const uid = cloudUid || (user && user.uid);
-  if (!user || !uid) return null;
+  if (!user) return null;
+
+  if(!cloudUid) cloudUid = await resolveCloudUid(user);
+  const uid = cloudUid || user.uid;
 
   const snap = await getDoc(doc(db, "couples", uid));
   if (!snap.exists()) return null;
