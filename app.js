@@ -127,8 +127,26 @@ function esc(s){
   }[c]));
 }
 
+function getLocalCoupleData(){
+  return {
+    start:data.start||'',
+    names:Array.isArray(data.names)?data.names:[],
+    messages:Array.isArray(data.messages)?data.messages:[],
+    trips:Array.isArray(data.trips)?data.trips:[],
+    finished:Array.isArray(data.finished)?data.finished:[]
+  };
+}
+window.getLocalCoupleData=getLocalCoupleData;
+
 function save(){
-  localStorage.setItem('coupleData',JSON.stringify(data));
+  const snapshot=getLocalCoupleData();
+  localStorage.setItem('coupleData',JSON.stringify(snapshot));
+
+  if(window.cloudSaveCoupleData && !window.__cloudHydrating){
+    window.cloudSaveCoupleData(snapshot).catch(error=>{
+      console.warn('Cloud save skipped:',error?.code||error?.message||error);
+    });
+  }
 }
 
 function duration(s){
@@ -304,24 +322,39 @@ function setSender(name){
   localStorage.setItem('coupleSender',name);
 }
 
-function addPhoto(input){
+async function addPhoto(input){
   const file=input.files?.[0];
   if(!file) return;
 
-  const reader=new FileReader();
-  reader.onload=()=>{
+  try{
+    let media='';
+    if(window.firebaseUser?.() && window.cloudUploadFile){
+      media=await window.cloudUploadFile(file,'photos');
+    }else{
+      media=await new Promise((resolve,reject)=>{
+        const reader=new FileReader();
+        reader.onload=()=>resolve(reader.result);
+        reader.onerror=reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
     data.messages.push({
       text:'📷 Photo',
       sender:currentSender(),
       time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
       kind:'photo',
-      media:reader.result
+      media
     });
+
     save();
     init();
-  };
-  reader.readAsDataURL(file);
-  input.value='';
+  }catch(error){
+    console.error(error);
+    alert('Photo upload မအောင်မြင်ပါ။ Firebase Storage ကို Enable လုပ်ထားရမလား စစ်ပေးပါ။');
+  }finally{
+    input.value='';
+  }
 }
 
 function shareLocation(){
@@ -609,5 +642,55 @@ function renderFinished(){
     }).join('')
     :'<div class="empty">No finished trips.</div>';
 }
+
+window.addEventListener('firebase-auth-changed', async function(event){
+  const user=event.detail;
+  if(!user || !window.cloudLoadCoupleData) return;
+
+  try{
+    window.__cloudHydrating=true;
+    const remote=await window.cloudLoadCoupleData();
+
+    if(remote){
+      data.start=remote.start||'';
+      data.names=Array.isArray(remote.names)?remote.names:['',''];
+      data.messages=Array.isArray(remote.messages)?remote.messages:[];
+      data.trips=normalizeTrips(remote.trips);
+      data.finished=normalizeFinished(remote.finished);
+      localStorage.setItem('coupleData',JSON.stringify(getLocalCoupleData()));
+      init();
+    }else if(window.cloudSaveCoupleData){
+      await window.cloudSaveCoupleData(getLocalCoupleData());
+    }
+  }catch(error){
+    console.warn('Cloud load failed:',error?.code||error?.message||error);
+  }finally{
+    window.__cloudHydrating=false;
+  }
+
+  if(window.cloudSubscribeCoupleData){
+    window.cloudSubscribeCoupleData(remote=>{
+      if(!remote) return;
+
+      const next={
+        start:remote.start||'',
+        names:Array.isArray(remote.names)?remote.names:['',''],
+        messages:Array.isArray(remote.messages)?remote.messages:[],
+        trips:normalizeTrips(remote.trips),
+        finished:normalizeFinished(remote.finished)
+      };
+
+      window.__cloudHydrating=true;
+      data.start=next.start;
+      data.names=next.names;
+      data.messages=next.messages;
+      data.trips=next.trips;
+      data.finished=next.finished;
+      localStorage.setItem('coupleData',JSON.stringify(getLocalCoupleData()));
+      init();
+      window.__cloudHydrating=false;
+    });
+  }
+});
 
 init();
