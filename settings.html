@@ -1,18 +1,167 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Settings</title><link rel="stylesheet" href="style.css"></head><body><main class="shell"><header class="top"><div class="brand">OUR LITTLE UNIVERSE<small>Settings</small></div><div class="orb">⚙</div></header><a class="back" href="index.html">← Dashboard</a><section class="card"><h3>⚙ Couple Settings</h3><div class="form"><input class="input" id="name1" placeholder="Your name"><input class="input" id="name2" placeholder="Partner name"><button class="btn" onclick="saveNames()">Save names</button></div><button class="btn" style="width:100%;margin-top:10px;background:linear-gradient(135deg,#7f1d1d,#dc2626)" onclick="logoutCouple()">🔒 Logout</button></section>
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#07111f">
+<title>Settings · Our Little Universe</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="shell">
+<header class="top">
+  <div class="brand">OUR LITTLE UNIVERSE<small>Settings</small></div>
+  <div class="orb">⚙</div>
+</header>
+
+<a class="back" href="index.html">← Dashboard</a>
+
+<section class="card">
+  <h3>⚙ Couple Settings</h3>
+  <div class="form">
+    <input class="input" id="name1" placeholder="Your name">
+    <input class="input" id="name2" placeholder="Partner name">
+    <button class="btn" onclick="saveNames()">Save names</button>
+  </div>
+  <button class="btn" style="width:100%;margin-top:10px;background:linear-gradient(135deg,#7f1d1d,#dc2626)" onclick="logoutCouple()">🔒 Logout</button>
+</section>
+
 <section class="card" style="margin-top:12px">
   <div class="section-title">
-    <div><div class="section-icon">👑</div><div><h3 style="margin:0">Owner</h3><div class="muted">Owner account & Gmail</div></div></div>
+    <div>
+      <div class="section-icon">👑</div>
+      <div>
+        <h3 style="margin:0">Owner</h3>
+        <div class="muted">Firebase Google Owner Account</div>
+      </div>
+    </div>
   </div>
+
   <div class="form">
-    <input class="input" id="ownerName" placeholder="Owner Name">
+    <input class="input" id="ownerName" placeholder="Owner Name" autocomplete="name">
     <input class="input" id="ownerGmail" type="email" inputmode="email" autocomplete="email" placeholder="Owner Gmail">
-    <input class="input" id="googleClientId" placeholder="Google OAuth Client ID">
-    <div id="ownerStatus" class="muted">Owner Gmail မချိတ်ရသေးပါ</div>
+    <div id="ownerStatus" class="muted">Owner Gmail မသတ်မှတ်ရသေးပါ</div>
+
     <button class="btn" onclick="saveOwnerSettings()">💾 Save Owner Gmail</button>
-    <button class="back" style="width:100%;justify-content:center" onclick="saveGoogleClientId()">🔐 Save Google Client ID</button>
-    <button class="back" style="width:100%;justify-content:center" onclick="connectOwnerGoogle()">🔗 Connect with Google</button>
+    <button class="btn primary-action" onclick="connectOwnerFirebase()">🔵 Connect with Google · Firebase</button>
+    <button class="back" style="width:100%;justify-content:center" onclick="disconnectOwnerFirebase()">Disconnect Firebase Owner</button>
+
     <div id="ownerError" class="error-note"></div>
   </div>
-  <p class="muted" style="margin-top:10px">Google နဲ့ တကယ်ချိတ်ရန် Google Cloud မှာ Web OAuth Client ID တစ်ခုဖန်တီးပြီး အပေါ်မှာထည့်ပါ။ Client ID က secret မဟုတ်ပါ။</p>
+
+  <p class="muted" style="margin-top:10px">
+    ဒီခလုတ်က Firebase Authentication ကိုသုံးပြီး Google Gmail နဲ့ Owner account ကို ချိတ်ပေးပါမယ်။
+    Google OAuth Client ID ကို သီးခြားထည့်စရာမလိုပါ။
+  </p>
 </section>
-</main><script src="https://accounts.google.com/gsi/client" async defer></script><script src="app.js"></script></body></html>
+</main>
+
+<script src="app.js"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithRedirect,
+  getRedirectResult,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+import { firebaseConfig } from "./firebase-config.js";
+
+const firebaseApp = initializeApp(firebaseConfig);
+const auth = getAuth(firebaseApp);
+const provider = new GoogleAuthProvider();
+provider.setCustomParameters({ prompt: "select_account" });
+
+const errorEl = document.getElementById("ownerError");
+const statusEl = document.getElementById("ownerStatus");
+
+function owner(){
+  try{return JSON.parse(localStorage.getItem("coupleOwner")||"null")}catch(e){return null}
+}
+
+function show(message, ok=false){
+  if(!errorEl)return;
+  errorEl.textContent=message;
+  errorEl.style.display="block";
+  errorEl.style.color=ok ? "#86efac" : "#fecaca";
+}
+
+function setOwner(user){
+  const old=owner()||{};
+  const email=(user.email||"").toLowerCase();
+  const saved=(old.gmail||"").toLowerCase();
+
+  if(saved && email!==saved){
+    show("ဒီ Google Gmail က သတ်မှတ်ထားတဲ့ Owner Gmail နဲ့ မတူပါ။");
+    signOut(auth).catch(()=>{});
+    return false;
+  }
+
+  const next={
+    ...old,
+    gmail: saved || email,
+    email,
+    name: user.displayName || old.name || "Owner",
+    photoURL: user.photoURL || "",
+    firebaseConnected:true,
+    firebaseUid:user.uid,
+    connectedAt:new Date().toISOString()
+  };
+
+  localStorage.setItem("coupleOwner",JSON.stringify(next));
+  if(window.renderOwnerSettings) window.renderOwnerSettings();
+  if(statusEl) statusEl.textContent="✓ Firebase Google Owner Connected: "+email;
+  show("✓ Firebase နဲ့ Google Owner Account ချိတ်ပြီးပါပြီ။",true);
+  return true;
+}
+
+window.connectOwnerFirebase=async function(){
+  const saved=owner();
+
+  if(!saved?.gmail){
+    show("အရင်ဆုံး Owner Gmail ကို Save လုပ်ပါ။");
+    return;
+  }
+
+  show("Google Sign-In ကို ဖွင့်နေပါတယ်…",true);
+
+  try{
+    await signInWithRedirect(auth,provider);
+  }catch(error){
+    console.error(error);
+    show("Firebase Google Sign-In မအောင်မြင်ပါ: "+(error.code||error.message));
+  }
+};
+
+window.disconnectOwnerFirebase=async function(){
+  try{ await signOut(auth); }catch(error){ console.error(error); }
+
+  const old=owner()||{};
+  delete old.firebaseConnected;
+  delete old.firebaseUid;
+  delete old.photoURL;
+  delete old.email;
+  delete old.connectedAt;
+  localStorage.setItem("coupleOwner",JSON.stringify(old));
+
+  if(window.renderOwnerSettings) window.renderOwnerSettings();
+  show("Firebase Owner connection ဖြုတ်ပြီးပါပြီ။",true);
+};
+
+getRedirectResult(auth).catch(error=>{
+  console.error(error);
+  show("Google Sign-In ပြန်လာရာမှာ error ဖြစ်ပါတယ်: "+(error.code||error.message));
+});
+
+onAuthStateChanged(auth,user=>{
+  if(user) setOwner(user);
+  else if(window.renderOwnerSettings) window.renderOwnerSettings();
+});
+
+if(window.renderOwnerSettings) window.renderOwnerSettings();
+</script>
+</body>
+</html>
