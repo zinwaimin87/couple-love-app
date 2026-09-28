@@ -16,8 +16,7 @@ import {
   getDoc,
   setDoc,
   onSnapshot,
-  serverTimestamp,
-  onDisconnect
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 import {
   getStorage,
@@ -85,16 +84,12 @@ async function startPresence(user){
       lastSeen:serverTimestamp()
     },{merge:true});
 
-    try{
-      await onDisconnect(presenceRef).set({
-        email,
-        uid:user.uid,
+    window.addEventListener("pagehide", () => {
+      setDoc(presenceRef,{
         online:false,
         lastSeen:serverTimestamp()
-      },{merge:true});
-    }catch(e){
-      console.warn("Presence disconnect handler:",e);
-    }
+      },{merge:true}).catch(()=>{});
+    }, {once:true});
   }catch(error){
     console.warn("Presence write:",error?.code||error?.message||error);
   }
