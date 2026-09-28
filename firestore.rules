@@ -3,7 +3,35 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /couples/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      function signedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner() {
+        return signedIn() && request.auth.uid == uid;
+      }
+
+      function isPartner() {
+        return signedIn()
+          && resource.data.get('partnerGmail', '') != ''
+          && request.auth.token.email_verified == true
+          && request.auth.token.email == resource.data.get('partnerGmail', '');
+      }
+
+      allow get: if isOwner() || isPartner();
+      allow list: if false;
+
+      allow create: if isOwner()
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      allow update: if isOwner()
+        || (
+          isPartner()
+          && request.resource.data.ownerUid == resource.data.ownerUid
+          && request.resource.data.partnerGmail == resource.data.partnerGmail
+        );
+
+      allow delete: if isOwner();
     }
   }
 }
