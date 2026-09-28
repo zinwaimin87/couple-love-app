@@ -16,7 +16,8 @@ import {
   getDoc,
   setDoc,
   onSnapshot,
-  serverTimestamp
+  serverTimestamp,
+  onDisconnect
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 import {
   getStorage,
@@ -39,6 +40,7 @@ window.firebaseApp = app;
 let currentUser = null;
 let cloudUid = null;
 let unsubscribeCloud = null;
+let unsubscribePresence = null;
 
 function getSavedOwner(){
   try { return JSON.parse(localStorage.getItem("coupleOwner") || "{}") || {}; }
@@ -70,6 +72,59 @@ async function resolveCloudUid(user){
 }
 
 window.firebaseUser = () => currentUser;
+
+async function startPresence(user){
+  if(!user || !user.email) return;
+  const email=emailKey(user.email);
+  const presenceRef=doc(db,"couplePresence",email);
+  try{
+    await setDoc(presenceRef,{
+      email,
+      uid:user.uid,
+      online:true,
+      lastSeen:serverTimestamp()
+    },{merge:true});
+
+    try{
+      await onDisconnect(presenceRef).set({
+        email,
+        uid:user.uid,
+        online:false,
+        lastSeen:serverTimestamp()
+      },{merge:true});
+    }catch(e){
+      console.warn("Presence disconnect handler:",e);
+    }
+  }catch(error){
+    console.warn("Presence write:",error?.code||error?.message||error);
+  }
+
+  const owner=getSavedOwner();
+  const partnerEmail=email===emailKey(owner.gmail)
+    ? emailKey(owner.partnerGmail)
+    : emailKey(owner.gmail);
+
+  if(!partnerEmail) return;
+
+  if(unsubscribePresence) unsubscribePresence();
+  const partnerRef=doc(db,"couplePresence",partnerEmail);
+  unsubscribePresence=onSnapshot(partnerRef,snap=>{
+    const status=document.getElementById("presenceStatus");
+    if(!status) return;
+    if(!snap.exists()){
+      status.textContent="🟡 Partner status မရသေးပါ";
+      return;
+    }
+    const p=snap.data();
+    status.textContent=p.online
+      ? "🟢 Partner Online"
+      : "⚪ Partner Offline · "+(p.lastSeen?.toDate ? p.lastSeen.toDate().toLocaleTimeString() : "last seen မရသေးပါ");
+    status.style.color=p.online?"#86efac":"#a5b4fc";
+  },error=>{
+    console.warn("Presence read:",error?.code||error?.message||error);
+  });
+}
+
 
 window.firebaseReady = new Promise(resolve => {
   onAuthStateChanged(auth, user => {
@@ -193,6 +248,7 @@ async function applyAuthenticatedOwner(user){
 
   localStorage.setItem("coupleOwner", JSON.stringify(next));
   cloudUid = await resolveCloudUid(user);
+  await startPresence(user);
   if (!cloudUid && isOwnerAccount) cloudUid = user.uid;
   if (window.renderOwnerSettings) window.renderOwnerSettings();
 
