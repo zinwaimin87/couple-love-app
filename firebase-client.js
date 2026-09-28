@@ -3,7 +3,6 @@ import {
   getAuth,
   GoogleAuthProvider,
   signInWithRedirect,
-  signInWithPopup,
   getRedirectResult,
   onAuthStateChanged,
   signOut
@@ -67,7 +66,13 @@ window.connectOwnerFirebase = async function(){
   }
 
   try {
-    await signInWithPopup(auth, provider);
+    const errorEl = document.getElementById("ownerError");
+    if (errorEl) {
+      errorEl.textContent = "Google Login ကိုဖွင့်နေပါတယ်… Google Account ရွေးပြီး ပြန်ဝင်လာပါမယ်။";
+      errorEl.style.display = "block";
+      errorEl.style.color = "#fde68a";
+    }
+    await signInWithRedirect(auth, provider);
   } catch (error) {
     console.error(error);
     show("Firebase Google Sign-In မအောင်မြင်ပါ: " + (error.code || error.message));
