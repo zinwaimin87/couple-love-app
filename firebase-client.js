@@ -15,6 +15,11 @@ import {
   doc,
   getDoc,
   setDoc,
+  addDoc,
+  updateDoc,
+  collection,
+  query,
+  orderBy,
   onSnapshot,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
@@ -309,6 +314,32 @@ async function ensureCloudDocument(uid){
   }
 }
 
+window.cloudMigrateLegacyMessages = async function(messages){
+  if(!Array.isArray(messages) || !messages.length || !currentUser || !cloudUid) return {ok:true,count:0};
+  const refCol=collection(db,"couples",cloudUid,"messages");
+  const existing=await getDoc(doc(db,"couples",cloudUid));
+  const marker=existing.exists() ? existing.data().messagesMigratedAt : null;
+  if(marker) return {ok:true,count:0,already:true};
+
+  for(const message of messages){
+    const copy={...message};
+    if(typeof copy.media==="string" && copy.media.startsWith("data:")) delete copy.media;
+    await addDoc(refCol,{
+      text:String(copy.text||""),
+      kind:String(copy.kind||"text"),
+      sender:String(copy.sender||""),
+      senderUid:copy.senderUid||"",
+      senderEmail:emailKey(copy.senderEmail||""),
+      media:copy.media||"",
+      sentAt:copy.createdAt ? new Date(copy.createdAt) : serverTimestamp(),
+      deliveredAt:null,
+      readAt:null
+    });
+  }
+  await setDoc(doc(db,"couples",cloudUid),{messagesMigratedAt:serverTimestamp()},{merge:true});
+  return {ok:true,count:messages.length};
+};
+
 window.cloudSaveCoupleData = async function(localData){
   const user = currentUser;
   const uid = cloudUid || (user && user.uid);
@@ -317,16 +348,9 @@ window.cloudSaveCoupleData = async function(localData){
   const payload = JSON.parse(JSON.stringify(localData || {}));
   delete payload.owner;
 
-  if (Array.isArray(payload.messages)) {
-    payload.messages = payload.messages.map(message => {
-      const copy = { ...message };
-      if (typeof copy.media === "string" && copy.media.startsWith("data:")) {
-        delete copy.media;
-        copy.mediaPending = true;
-      }
-      return copy;
-    });
-  }
+  // Chat messages are stored in the dedicated subcollection now.
+  // Keep only a tiny migration marker in the main couple document.
+  delete payload.messages;
 
   await setDoc(doc(db, "couples", uid), {
     ...payload,
@@ -361,6 +385,66 @@ window.cloudSubscribeCoupleData = function(callback){
   );
 
   return unsubscribeCloud;
+};
+
+
+// Dedicated realtime chat messages. Messages live outside the couple document
+// so chat growth does not push the main document toward Firestore's 1 MiB limit.
+function messageCollection(){
+  if(!cloudUid) return null;
+  return collection(db, "couples", cloudUid, "messages");
+}
+
+window.cloudSendMessage = async function(message){
+  const user=currentUser;
+  const uid=cloudUid || (user && user.uid);
+  if(!user || !uid) throw new Error("Firebase login လိုအပ်ပါတယ်။");
+
+  const senderEmail=emailKey(user.email);
+  const payload={
+    text:String(message?.text || ""),
+    kind:String(message?.kind || "text"),
+    sender:String(message?.sender || ""),
+    senderUid:user.uid,
+    senderEmail,
+    media:typeof message?.media==="string" && !message.media.startsWith("data:") ? message.media : "",
+    sentAt:serverTimestamp(),
+    deliveredAt:null,
+    readAt:null
+  };
+
+  const refDoc=await addDoc(collection(db,"couples",uid,"messages"),payload);
+  return {ok:true,id:refDoc.id};
+};
+
+window.cloudSubscribeMessages = function(callback){
+  if(!currentUser || !cloudUid) return ()=>{};
+  const q=query(
+    collection(db,"couples",cloudUid,"messages"),
+    orderBy("sentAt","asc")
+  );
+  return onSnapshot(q, snapshot=>{
+    const messages=snapshot.docs.map(d=>({id:d.id,...d.data()}));
+    if(callback) callback(messages);
+  }, error=>{
+    console.error("Realtime messages error:",error);
+    if(callback) callback([],error);
+  });
+};
+
+window.cloudMarkMessageDelivered = async function(messageId){
+  if(!currentUser || !cloudUid || !messageId) return;
+  await updateDoc(doc(db,"couples",cloudUid,"messages",messageId),{
+    deliveredAt:serverTimestamp()
+  });
+};
+
+window.cloudMarkMessageRead = async function(messageId){
+  if(!currentUser || !cloudUid || !messageId) return;
+  await updateDoc(doc(db,"couples",cloudUid,"messages",messageId),{
+    readAt:serverTimestamp(),
+    deliveredAt:serverTimestamp()
+  });
 };
 
 window.cloudUploadFile = async function(file, folder="media"){
