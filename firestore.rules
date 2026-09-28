@@ -87,12 +87,13 @@ service cloud.firestore {
           && request.resource.data.senderUid == request.auth.uid
           && request.resource.data.senderEmail == request.auth.token.email;
 
-        allow update: if (messageOwner() || messagePartner())
+        allow update: if (
+          (messageOwner() || messagePartner())
           && resource.data.senderUid == request.auth.uid
-          || (
-            (messageOwner() || messagePartner())
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deliveredAt','readAt'])
-          );
+        ) || (
+          (messageOwner() || messagePartner())
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deliveredAt','readAt'])
+        );
 
         allow delete: if messageOwner() || messagePartner();
       }
