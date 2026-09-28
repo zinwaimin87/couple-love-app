@@ -1,4 +1,4 @@
-const CACHE_NAME = "our-little-universe-v3";
+const CACHE_NAME = "our-little-universe-v4";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -9,9 +9,9 @@ const APP_SHELL = [
   "/settings.html",
   "/login.html",
   "/style.css",
-  "/app.js",
+  "/app.js?v=20260928-3",
   "/firebase-config.js",
-  "/firebase-client.js",
+  "/firebase-client.js?v=20260928-3",
   "/manifest.json"
 ];
 
