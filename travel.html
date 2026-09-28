@@ -1,32 +1,42 @@
 <!doctype html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Travel</title><link rel="stylesheet" href="style.css"></head>
 <body><main class="shell">
-<header class="top"><div class="brand">OUR LITTLE UNIVERSE<small>Travel</small></div><div class="orb">✈️</div></header>
+<header class="top"><div class="brand">OUR LITTLE UNIVERSE<small>TRAVEL PLANNER</small></div><div class="orb">✈️</div></header>
 <a class="back" href="index.html">← Dashboard</a>
 
-<section class="card">
-<h3>✈️ Create a Trip</h3>
-<div class="muted">ခရီးစဉ်အမည်တစ်ခုအောက်မှာ လမ်းကြောင်းအဆင့်ဆင့်နဲ့ ကုန်ကျစရိတ်တွေကို ထည့်နိုင်ပါတယ်။</div>
-<div id="tripError" class="muted" style="display:none;color:#fca5a5;margin-top:10px"></div><div class="form" style="margin-top:10px">
+<section class="hero travel-hero">
+<div class="eyebrow">TRAVEL</div><h1>Our Trips ✈️</h1>
+<p class="muted">ခရီးစဉ်တစ်ခုကို အမည်တစ်ခုအောက်မှာ လမ်းကြောင်းအဆင့်ဆင့်နဲ့ ကုန်ကျစရိတ်အားလုံးကို စုစည်းထားနိုင်ပါတယ်။</p>
+</section>
+
+<section class="card travel-create" style="margin-top:11px">
+<div class="section-title"><div><span class="section-icon">🗺️</span><div><h3>ခရီးစဉ်အသစ်</h3><div class="muted">အရင်ဆုံး ခရီးစဉ်အမည်ဖန်တီးပါ</div></div></div></div>
+<div id="tripError" class="error-note"></div>
+<div class="form">
 <label class="muted">ခရီးစဉ်အမည်</label><input class="input" id="tripName" placeholder="ဥပမာ Bangkok Trip" required>
 <label class="muted">သွားမည့်နေရာ</label><input class="input" id="destination" placeholder="ဥပမာ Bangkok" required>
 <label class="muted">ခရီးစဉ်ရက်စွဲ</label><input class="input" id="tripDate" type="date">
-<button class="btn" onclick="createTrip()">+ Create Trip</button>
+<button class="btn primary-action" onclick="createTrip()">＋ Create Trip</button>
 </div>
 </section>
 
-<section class="card" style="margin-top:10px">
-<h3>🧭 Add Route / Car Step</h3>
+<section class="card" style="margin-top:11px">
+<div class="section-title"><div><span class="section-icon">🚗</span><div><h3>လမ်းကြောင်း + ကုန်ကျစရိတ်</h3><div class="muted">ရွေးထားတဲ့ခရီးစဉ်အောက်မှာ အဆင့်လိုက်ထည့်ပါ</div></div></div></div>
 <div class="form">
-<select class="input" id="tripSelect"><option value="">ခရီးစဉ်ရွေးပါ</option></select>
-<input class="input" id="route" placeholder="လမ်းကြောင်း / ကားအဆင့် (ဥပမာ Pattaya → Bangkok)">
-<input class="input" id="expense" type="number" min="0" placeholder="ကုန်ကျစရိတ် (THB)">
-<select class="input" id="expenseType"><option>Transport</option><option>Food</option><option>Hotel</option><option>Tickets</option><option>Fuel</option><option>Shopping</option><option>Other</option></select>
-<button class="btn" onclick="addRouteStep()">+ Add Route Step</button>
+<label class="muted">ခရီးစဉ်</label>
+<select class="input" id="tripSelect"><option value="">— ခရီးစဉ်ရွေးပါ —</option></select>
+<label class="muted">လမ်းကြောင်း / ကားအဆင့်</label>
+<input class="input" id="route" placeholder="ဥပမာ Pattaya → Bangkok">
+<div class="two-inputs">
+<div><label class="muted">ကုန်ကျစရိတ် (฿)</label><input class="input" id="expense" type="number" min="0" placeholder="160"></div>
+<div><label class="muted">အမျိုးအစား</label><select class="input" id="expenseType"><option>Transport</option><option>Food</option><option>Hotel</option><option>Tickets</option><option>Fuel</option><option>Shopping</option><option>Other</option></select></div>
+</div>
+<button class="btn primary-action" onclick="addRouteStep()">＋ Add Route Step</button>
 </div>
 </section>
 
-<section class="card" style="margin-top:10px">
-<h3>🚗 Active Trips</h3><div id="trips"></div>
+<section class="card active-wrap" style="margin-top:11px">
+<div class="section-title"><div><span class="section-icon">🧳</span><div><h3>သွားမည့်ခရီးစဉ်များ</h3><div class="muted">Route အားလုံးနဲ့ စုစုပေါင်းကုန်ကျစရိတ်</div></div></div></div>
+<div id="trips"></div>
 </section>
 </main><script src="app.js"></script></body></html>
