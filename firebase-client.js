@@ -164,9 +164,10 @@ async function applyAuthenticatedOwner(user){
   const owner = getSavedOwner();
 
   const email = (user.email || "").toLowerCase();
-  const saved = (owner.gmail || "").toLowerCase();
+  const saved = emailKey(owner.gmail);
+  const partner = emailKey(owner.partnerGmail);
 
-  if (saved && email !== saved) {
+  if (email !== saved && email !== partner) {
     const errorEl = document.getElementById("ownerError");
     if (errorEl) {
       errorEl.textContent = "ဒီ Google Gmail က သတ်မှတ်ထားတဲ့ Owner Gmail နဲ့ မတူပါ။";
@@ -181,12 +182,12 @@ async function applyAuthenticatedOwner(user){
   const next = {
     ...owner,
     gmail: isOwnerAccount ? (saved || email) : (owner.gmail || saved || ""),
-
     email,
     name: user.displayName || owner.name || "Owner",
     photoURL: user.photoURL || "",
     firebaseConnected: true,
-    firebaseUid: user.uid,
+    firebaseUid: isOwnerAccount ? user.uid : (owner.firebaseUid || ""),
+    partnerFirebaseUid: isOwnerAccount ? (owner.partnerFirebaseUid || "") : user.uid,
     connectedAt: new Date().toISOString()
   };
 
@@ -196,7 +197,9 @@ async function applyAuthenticatedOwner(user){
   if (window.renderOwnerSettings) window.renderOwnerSettings();
 
   const status = document.getElementById("ownerStatus");
-  if (status) status.textContent = "✓ Firebase Google Owner Connected: " + email;
+  if (status) status.textContent = isOwnerAccount
+    ? "✓ Firebase Google Owner Connected: " + email
+    : "✓ Firebase Google Partner Connected: " + email;
 
   try {
     if (isOwnerAccount) {
