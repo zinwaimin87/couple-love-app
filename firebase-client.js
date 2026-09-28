@@ -83,9 +83,21 @@ window.connectOwnerFirebase = async function(){
     const result = await signInWithPopup(auth, provider);
     if (result && result.user) {
       await applyAuthenticatedOwner(result.user);
+      show("✓ Firebase Google Owner Connected: " + result.user.email, true);
     }
   } catch (error) {
     console.error(error);
+    if (error?.code === "auth/popup-blocked") {
+      try {
+        show("Popup ပိတ်ထားလို့ Google Redirect Login ကို ပြောင်းနေပါတယ်…");
+        await signInWithRedirect(auth, provider);
+        return;
+      } catch (redirectError) {
+        console.error(redirectError);
+        show("Google Login မအောင်မြင်ပါ: " + (redirectError.code || redirectError.message));
+        return;
+      }
+    }
     show("Firebase Google Sign-In မအောင်မြင်ပါ: " + (error.code || error.message));
   }
 };
