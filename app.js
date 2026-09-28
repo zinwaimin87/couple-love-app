@@ -349,11 +349,26 @@ function init(){
       if(m.kind==='voice'&&m.media)
         media='<audio controls src="'+m.media+'" style="width:100%;margin-top:6px"></audio>';
 
-      return '<div class="msg '+(m.sender===currentSender()?'me':'')+'">'+
+      const mine=m.senderUid
+        ? m.senderUid===window.firebaseUser?.()?.uid
+        : m.sender===currentSender();
+
+      let delivery='';
+      if(mine){
+        delivery=m.readAt?'✓✓':'';
+        if(!delivery && m.deliveredAt) delivery='✓✓';
+        if(!delivery && (m.sentAt||m.time)) delivery='✓';
+      }
+
+      const time=m.sentAt?.toDate
+        ?m.sentAt.toDate().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
+        :(m.time||'');
+
+      return '<div class="msg '+(mine?'me':'')+'">'+
         '<b style="font-size:11px">'+esc(m.sender||'Me')+'</b>'+
-        '<div>'+esc(m.text)+'</div>'+
+        '<div>'+esc(m.text||'')+'</div>'+
         media+
-        '<div class="muted">'+esc(m.time)+'</div>'+
+        '<div class="muted">'+esc(time)+' '+(delivery?'<span style="letter-spacing:-2px">'+delivery+'</span>':'')+'</div>'+
         '</div>';
     }).join('')||'<div class="empty">No messages yet.</div>';
 
@@ -388,22 +403,36 @@ function currentSender(){
   return localStorage.getItem('coupleSender')||data.names[0]||'Me';
 }
 
-function sendMsg(){
+async function sendMsg(){
   const input=$('chatInput');
   if(!input) return;
   const v=input.value.trim();
   if(!v) return;
 
-  data.messages.push({
+  const message={
     text:v,
     sender:currentSender(),
-    time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
     kind:'text'
-  });
+  };
 
-  input.value='';
-  save();
-  init();
+  try{
+    if(window.cloudSendMessage && window.firebaseUser?.()){
+      await window.cloudSendMessage(message);
+      input.value='';
+      return;
+    }
+
+    data.messages.push({
+      ...message,
+      time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
+    });
+    input.value='';
+    save();
+    init();
+  }catch(error){
+    console.error(error);
+    alert('Message ပို့မရပါ: '+(error.code||error.message||error));
+  }
 }
 
 function setSender(name){
@@ -427,16 +456,15 @@ async function addPhoto(input){
       });
     }
 
-    data.messages.push({
-      text:'📷 Photo',
-      sender:currentSender(),
-      time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
-      kind:'photo',
-      media
-    });
+    const message={text:'📷 Photo',sender:currentSender(),kind:'photo',media};
 
-    save();
-    init();
+    if(window.cloudSendMessage && window.firebaseUser?.()){
+      await window.cloudSendMessage(message);
+    }else{
+      data.messages.push({...message,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+      save();
+      init();
+    }
   }catch(error){
     console.error(error);
     alert('Photo upload မအောင်မြင်ပါ။ Firebase Storage ကို Enable လုပ်ထားရမလား စစ်ပေးပါ။');
@@ -454,15 +482,14 @@ function shareLocation(){
   navigator.geolocation.getCurrentPosition(
     p=>{
       const loc='https://maps.google.com/?q='+p.coords.latitude+','+p.coords.longitude;
-      data.messages.push({
-        text:'📍 My location',
-        sender:currentSender(),
-        time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
-        kind:'location',
-        media:loc
-      });
-      save();
-      init();
+      const message={text:'📍 My location',sender:currentSender(),kind:'location',media:loc};
+      if(window.cloudSendMessage && window.firebaseUser?.()){
+        window.cloudSendMessage(message).catch(error=>alert('Location ပို့မရပါ: '+(error.code||error.message||error)));
+      }else{
+        data.messages.push({...message,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+        save();
+        init();
+      }
     },
     ()=>alert('Location permission ကို Allow လုပ်ပေးပါ။')
   );
@@ -541,7 +568,9 @@ function createTrip(){
   $('destination').value='';
   $('tripDate').value='';
 
-  init();
+  window.addEventListener('beforeunload',()=>{ if(unsubscribeRealtimeMessages) unsubscribeRealtimeMessages(); });
+
+init();
 
   if($('tripSelect')) $('tripSelect').value=String(t.id);
 }
@@ -731,6 +760,36 @@ function renderFinished(){
     :'<div class="empty">No finished trips.</div>';
 }
 
+let unsubscribeRealtimeMessages=null;
+
+function startRealtimeMessages(){
+  if(unsubscribeRealtimeMessages) unsubscribeRealtimeMessages();
+  if(!window.cloudSubscribeMessages || !window.firebaseUser?.()) return;
+
+  unsubscribeRealtimeMessages=window.cloudSubscribeMessages(async messages=>{
+    if(!Array.isArray(messages)) return;
+    data.messages=messages;
+
+    // Mark messages from the other person as delivered/read.
+    const me=window.firebaseUser?.()?.uid;
+    const activeChat=!!document.getElementById('chatbox');
+    for(const m of messages){
+      if(m.senderUid && me && m.senderUid!==me){
+        try{
+          if(!m.deliveredAt && window.cloudMarkMessageDelivered)
+            await window.cloudMarkMessageDelivered(m.id);
+          if(activeChat && !m.readAt && window.cloudMarkMessageRead)
+            await window.cloudMarkMessageRead(m.id);
+        }catch(error){
+          console.warn('Message status update:',error?.code||error?.message||error);
+        }
+      }
+    }
+
+    if(document.getElementById('chatbox')) init();
+  });
+}
+
 window.addEventListener('firebase-auth-changed', async function(event){
   const user=event.detail;
   if(!user || !window.cloudLoadCoupleData) return;
@@ -755,6 +814,11 @@ window.addEventListener('firebase-auth-changed', async function(event){
   }finally{
     window.__cloudHydrating=false;
   }
+
+  if(window.cloudMigrateLegacyMessages && data.messages.length){
+    try{ await window.cloudMigrateLegacyMessages(data.messages); }catch(error){ console.warn('Legacy message migration:',error?.code||error?.message||error); }
+  }
+  startRealtimeMessages();
 
   if(window.cloudSubscribeCoupleData){
     window.cloudSubscribeCoupleData(remote=>{
