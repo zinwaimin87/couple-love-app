@@ -83,7 +83,10 @@ window.connectOwnerFirebase = async function(){
     const result = await signInWithPopup(auth, provider);
     if (result && result.user) {
       await applyAuthenticatedOwner(result.user);
-      show("✓ Firebase Google Owner Connected: " + result.user.email, true);
+      if (errorEl) {
+        errorEl.textContent = "";
+        errorEl.style.display = "none";
+      }
     }
   } catch (error) {
     console.error(error);
