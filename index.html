@@ -1,20 +1,45 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07111f"><title>Our Little Universe ❤️</title><link rel="stylesheet" href="style.css"><link rel="manifest" href="manifest.json"></head><body><main class="shell"><header class="top"><div class="brand"><span id="anniversaryTop">Anniversary</span><small>OUR LITTLE UNIVERSE</small></div><div class="orb">♡</div></header><section class="hero"><div class="eyebrow">DASHBOARD</div><h1 id="greeting">Our Story.</h1><p class="muted">Everything for two, in one simple place.</p><div class="card" style="margin-top:14px;text-align:center"><div class="muted">❤️ Next Anniversary</div><div id="anniversaryCountdown" style="font-size:24px;font-weight:800;margin-top:6px">Calculating…</div><div id="anniversaryDate" class="muted" style="margin-top:4px"></div></div></section><div class="grid"><a class="card dash" href="story.html"><div class="icon">♡</div><h3>Our Story</h3><div class="muted">Relationship & anniversary</div></a><a class="card dash" href="chat.html"><div class="icon">💬</div><h3>Chat</h3><div class="muted">Private messages</div></a><a class="card dash" href="travel.html"><div class="icon">✈️</div><h3>Travel</h3><div class="muted">Trips & expenses</div></a><a class="card dash" href="finished.html"><div class="icon">✓</div><h3>Finished</h3><div class="muted">Past trips</div></a><a class="card dash" href="settings.html"><div class="icon">⚙</div><h3>Settings</h3><div class="muted">Names & preferences</div></a></div></main><script src="app.js"></script><script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(console.warn));}</script><script type="module" src="firebase-client.js"></script><script>function updateAnniversaryTop(){
-  const el=$('anniversaryTop');
-  if(el) el.textContent=data.start?duration(data.start):'Anniversary';
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07111f"><title>Our Little Universe ❤️</title><link rel="stylesheet" href="style.css"><link rel="manifest" href="manifest.json"></head>
+<body>
+<main class="shell dashboard-v2">
+<header class="dash-nav">
+  <div><div class="dash-mini">OUR LITTLE UNIVERSE</div><div class="dash-time" id="anniversaryTop">Anniversary</div></div>
+  <div class="dash-heart">♡</div>
+</header>
 
-  const cd=$('anniversaryCountdown');
-  const dateEl=$('anniversaryDate');
-  if(cd){
-    const info=window.nextAnniversaryInfo?.(data.start);
-    if(!info){
-      cd.textContent='Relationship Start Date ထည့်ပါ';
-      if(dateEl) dateEl.textContent='';
-    }else{
-      cd.textContent=info.days+'d '+String(info.hours).padStart(2,'0')+'h '+String(info.mins).padStart(2,'0')+'m '+String(info.secs).padStart(2,'0')+'s';
-      if(dateEl) dateEl.textContent='🎉 '+info.target.toLocaleDateString([], {year:'numeric',month:'long',day:'numeric'});
-    }
-  }
+<section class="dash-hero-v2">
+  <div class="dash-glow"></div>
+  <div class="dash-kicker">TWO PEOPLE · ONE STORY</div>
+  <h1 id="greeting">Our Story.</h1>
+  <p>Everything for two, in one simple place.</p>
+  <div class="anniversary-box">
+    <div class="anniversary-label">NEXT ANNIVERSARY</div>
+    <div id="anniversaryCountdown" class="anniversary-count">Calculating…</div>
+    <div id="anniversaryDate" class="anniversary-date"></div>
+  </div>
+</section>
+
+<div class="dash-section-title"><span>YOUR UNIVERSE</span><small>Explore</small></div>
+<section class="dash-grid-v2">
+<a class="dash-tile tile-story" href="story.html"><div class="tile-icon">♡</div><div class="tile-copy"><h3>Our Story</h3><p>Relationship & anniversary</p></div><span class="tile-arrow">→</span></a>
+<a class="dash-tile tile-chat" href="chat.html"><div class="tile-icon">•••</div><div class="tile-copy"><h3>Chat</h3><p>Private messages</p></div><span class="tile-arrow">→</span></a>
+<a class="dash-tile tile-travel" href="travel.html"><div class="tile-icon">✈</div><div class="tile-copy"><h3>Travel</h3><p>Trips & expenses</p></div><span class="tile-arrow">→</span></a>
+<a class="dash-tile tile-finished" href="finished.html"><div class="tile-icon">✓</div><div class="tile-copy"><h3>Finished</h3><p>Past trips</p></div><span class="tile-arrow">→</span></a>
+<a class="dash-tile tile-settings" href="settings.html"><div class="tile-icon">⚙</div><div class="tile-copy"><h3>Settings</h3><p>Names & preferences</p></div><span class="tile-arrow">→</span></a>
+</section>
+</main>
+<script src="app.js"></script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(console.warn));}</script>
+<script type="module" src="firebase-client.js"></script>
+<script>
+function updateAnniversaryTop(){
+ const el=$('anniversaryTop'); if(el) el.textContent=data.start?duration(data.start):'Anniversary';
+ const cd=$('anniversaryCountdown'),dateEl=$('anniversaryDate');
+ if(cd){const info=window.nextAnniversaryInfo?.(data.start);
+  if(!info){cd.textContent='Relationship Start Date ထည့်ပါ';if(dateEl)dateEl.textContent='';}
+  else{cd.textContent=info.days+'d '+String(info.hours).padStart(2,'0')+'h '+String(info.mins).padStart(2,'0')+'m '+String(info.secs).padStart(2,'0')+'s';if(dateEl)dateEl.textContent='🎉 '+info.target.toLocaleDateString([],{year:'numeric',month:'long',day:'numeric'});}
+ }
 }
-updateAnniversaryTop();
-setInterval(updateAnniversaryTop,1000);
-$('greeting').textContent=data.names[0]&&data.names[1]?data.names[0]+' × '+data.names[1]:'Our Story.'</script></body></html>
+updateAnniversaryTop();setInterval(updateAnniversaryTop,1000);
+$('greeting').textContent=data.names[0]&&data.names[1]?data.names[0]+' × '+data.names[1]:'Our Story.';
+</script></body></html>
