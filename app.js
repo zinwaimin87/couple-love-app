@@ -183,8 +183,11 @@ async function checkFirebaseNow(){
       return;
     }
     const owner=getOwner()||{};
-    if(owner.gmail && user.email && owner.gmail.toLowerCase()!==user.email.toLowerCase()){
-      setStatus('❌ Google account နဲ့ Owner Gmail မကိုက်ပါ။');
+    const userEmail=(user.email||'').toLowerCase();
+    const ownerEmail=(owner.gmail||'').toLowerCase();
+    const partnerEmail=(owner.partnerGmail||'').toLowerCase();
+    if((ownerEmail||partnerEmail) && userEmail!==ownerEmail && userEmail!==partnerEmail){
+      setStatus('❌ Google account က Owner/Partner Gmail မကိုက်ပါ။');
       return;
     }
     if(window.cloudLoadCoupleData){
