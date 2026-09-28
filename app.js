@@ -144,6 +144,49 @@ async function syncCloudNow(){
   }
 }
 
+
+async function checkFirebaseNow(){
+  const status=$('firebaseStatus');
+  const setStatus=(msg,ok=false)=>{
+    if(status){
+      status.textContent=msg;
+      status.style.color=ok?'#86efac':'#fde68a';
+    }
+  };
+
+  try{
+    setStatus('⏳ Firebase connection စစ်နေပါတယ်…');
+    if(!window.firebaseReady || !window.firebaseUser){
+      setStatus('❌ Firebase client မဖွင့်နိုင်သေးပါ။');
+      return;
+    }
+    await window.firebaseReady;
+    const user=window.firebaseUser();
+    if(!user){
+      setStatus('⚠️ Firebase Google account မချိတ်ရသေးပါ။ Connect with Google ကိုနှိပ်ပါ။');
+      return;
+    }
+    const owner=getOwner()||{};
+    if(owner.gmail && user.email && owner.gmail.toLowerCase()!==user.email.toLowerCase()){
+      setStatus('❌ Google account နဲ့ Owner Gmail မကိုက်ပါ။');
+      return;
+    }
+    if(window.cloudLoadCoupleData){
+      const remote=await window.cloudLoadCoupleData();
+      if(remote){
+        setStatus('✓ Firebase + Google Auth + Firestore အလုပ်လုပ်နေပါပြီ။ '+user.email,true);
+      }else{
+        setStatus('✓ Google Auth အလုပ်လုပ်နေပါပြီ။ Firestore document မရှိသေးပါ။',true);
+      }
+    }else{
+      setStatus('✓ Google Auth ချိတ်ပြီးပါပြီ။ Cloud module မပြည့်စုံသေးပါ။',true);
+    }
+  }catch(error){
+    console.error(error);
+    setStatus('❌ Firebase Error: '+(error.code||error.message||error));
+  }
+}
+window.checkFirebaseNow=checkFirebaseNow;
 if(!isLoginPage()) requireAuth();
 
 function esc(s){
