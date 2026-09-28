@@ -65,18 +65,19 @@ window.addEventListener("firebase-auth-changed", function(event){
   const error=document.getElementById("ownerError");
 
   if(user){
-    const saved=(JSON.parse(localStorage.getItem("coupleOwner")||"{}")||{});
-    if(saved.gmail && user.email && saved.gmail.toLowerCase() !== user.email.toLowerCase()){
+    let saved={};
+    try{ saved=JSON.parse(localStorage.getItem("coupleOwner")||"{}")||{}; }catch(e){}
+    if(saved.gmail && user.email && saved.gmail.toLowerCase()!==user.email.toLowerCase()){
       if(error){
         error.textContent="ဒီ Google Gmail က သတ်မှတ်ထားတဲ့ Owner Gmail နဲ့ မတူပါ။";
         error.style.display="block";
+        error.style.color="#fecaca";
       }
       return;
     }
     if(status) status.textContent="✓ Firebase Google Owner Connected: "+user.email;
   }
 });
-</script>
 </script>
 </body>
 </html>
