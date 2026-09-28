@@ -69,6 +69,34 @@ service cloud.firestore {
           && request.resource.data.partnerGmail == resource.data.partnerGmail
         );
 
+
+      match /messages/{messageId} {
+        function messageOwner() {
+          return request.auth != null && request.auth.uid == uid;
+        }
+
+        function messagePartner() {
+          return request.auth != null
+            && request.auth.token.email_verified == true
+            && get(/databases/$(database)/documents/couples/$(uid)).data.get('partnerGmail','') == request.auth.token.email;
+        }
+
+        allow get, list: if messageOwner() || messagePartner();
+
+        allow create: if (messageOwner() || messagePartner())
+          && request.resource.data.senderUid == request.auth.uid
+          && request.resource.data.senderEmail == request.auth.token.email;
+
+        allow update: if (messageOwner() || messagePartner())
+          && resource.data.senderUid == request.auth.uid
+          || (
+            (messageOwner() || messagePartner())
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deliveredAt','readAt'])
+          );
+
+        allow delete: if messageOwner() || messagePartner();
+      }
+
       allow delete: if isOwner();
     }
   }
