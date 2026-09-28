@@ -102,3 +102,17 @@
 .tile-arrow{position:absolute;right:16px;bottom:16px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.09);color:#a8eaff;font-size:15px}
 @media(max-width:600px){.dash-hero-v2{padding:23px;border-radius:25px}.dash-hero-v2 h1{font-size:40px}.anniversary-box{min-width:0;width:100%}.dash-grid-v2{gap:9px}.dash-tile{min-height:125px;padding:15px;border-radius:19px}.tile-copy h3{font-size:18px}.tile-copy p{font-size:11px}.dash-heart{width:45px;height:45px}}
 @media(max-width:390px){.dash-grid-v2{grid-template-columns:1fr}.dash-tile{min-height:110px}}
+
+/* Global button refresh v3 */
+.btn,.back,.travel-back{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.btn{min-height:44px;border-radius:15px;font-size:14px;letter-spacing:.1px;display:inline-flex;align-items:center;justify-content:center;gap:7px;user-select:none;-webkit-user-select:none}
+.btn:hover{filter:brightness(1.08)}
+.btn:active{transform:scale(.97)!important;filter:brightness(.96)}
+.btn:focus-visible,.back:focus-visible,.travel-back:focus-visible{outline:2px solid #67e8f9;outline-offset:3px}
+.btn.small{min-height:36px;border-radius:12px}
+.primary-action,.travel-main-btn{min-height:48px}
+.dash-tile{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.dash-tile:active{transform:scale(.985)!important;filter:brightness(.97)}
+.dash-tile .tile-arrow{transition:transform .2s ease,background .2s ease}
+.dash-tile:hover .tile-arrow{transform:translateX(3px);background:rgba(255,255,255,.16)}
+.input,select{min-height:46px}
