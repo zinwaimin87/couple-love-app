@@ -1,0 +1,11 @@
+{
+  "name": "Our Little Universe",
+  "short_name": "Our Universe",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#07111f",
+  "theme_color": "#07111f",
+  "description": "Private couple story, chat, travel and anniversary app.",
+  "icons": []
+}
