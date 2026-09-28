@@ -93,6 +93,8 @@ window.addEventListener("firebase-auth-changed", function(event){
       return;
     }
     if(status) status.textContent="✓ Firebase Google Owner Connected: "+user.email;
+    const fs=document.getElementById("firebaseStatus");
+    if(fs){ fs.textContent="✓ Firebase Google Auth Connected · "+user.email; fs.style.color="#86efac"; }
   }
 });
 </script>
