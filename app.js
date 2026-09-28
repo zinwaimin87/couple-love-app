@@ -243,7 +243,7 @@ function save(){
 
 function nextAnniversaryInfo(start){
   if(!start) return null;
-  const base=new Date(start+'T00:00:00');
+  const base=new Date(start);
   if(Number.isNaN(base.getTime())) return null;
 
   const now=new Date();
@@ -444,7 +444,9 @@ function init(){
     $('chatbox').scrollTop=$('chatbox').scrollHeight;
   }
 
-  if($('ownerGmail')) renderOwnerSettings();\n\n  if($('mediaGallery') && $('mediaGallery').style.display!=='none') renderMediaGallery();
+  if($('ownerGmail')) renderOwnerSettings();
+
+  if($('mediaGallery') && $('mediaGallery').style.display!=='none') renderMediaGallery();
 
   if($('trips')){
     renderTripSelect();
