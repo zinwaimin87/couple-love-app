@@ -349,8 +349,13 @@ function init(){
       if(m.kind==='video'&&m.media)
         media='<video controls playsinline preload="metadata" style="width:100%;max-height:360px;border-radius:12px;margin-top:6px" src="'+m.media+'"></video>';
 
-      if(m.kind==='location'&&m.media)
-        media='<a class="back" style="display:inline-flex;margin-top:6px" target="_blank" rel="noopener" href="'+m.media+'">📍 Open Location</a>';
+      if(m.kind==='location'&&m.media){
+        const coord=(typeof m.lat==='number'&&typeof m.lng==='number')
+          ? '<div class="muted" style="margin-top:4px">📍 '+m.lat.toFixed(5)+', '+m.lng.toFixed(5)+(typeof m.accuracy==='number'?' · ±'+Math.round(m.accuracy)+'m':'')+'</div>'
+          : '';
+        media='<div style="margin-top:6px">'+coord+
+          '<a class="back" style="display:inline-flex;margin-top:6px" target="_blank" rel="noopener" href="'+m.media+'">🗺️ Open in Google Maps</a></div>';
+      }
 
       if(m.kind==='voice'&&m.media)
         media='<audio controls src="'+m.media+'" style="width:100%;margin-top:6px"></audio>';
@@ -572,23 +577,62 @@ async function addVideo(input){
 
 function shareLocation(){
   if(!navigator.geolocation){
-    alert('Location မရနိုင်ပါ');
+    alert('ဒီ browser မှာ Location မရနိုင်ပါ');
     return;
+  }
+
+  const status=$('presenceStatus');
+  if(status){
+    status.textContent='📍 Location ရယူနေပါတယ်…';
+    status.style.color='#fde68a';
   }
 
   navigator.geolocation.getCurrentPosition(
     p=>{
-      const loc='https://maps.google.com/?q='+p.coords.latitude+','+p.coords.longitude;
-      const message={text:'📍 My location',sender:currentSender(),kind:'location',media:loc};
+      const lat=Number(p.coords.latitude);
+      const lng=Number(p.coords.longitude);
+      const accuracy=Number(p.coords.accuracy||0);
+      const loc='https://maps.google.com/?q='+lat+','+lng;
+      const message={
+        text:'📍 My location',
+        sender:currentSender(),
+        kind:'location',
+        media:loc,
+        lat,
+        lng,
+        accuracy
+      };
+
       if(window.cloudSendMessage && window.firebaseUser?.()){
-        window.cloudSendMessage(message).catch(error=>alert('Location ပို့မရပါ: '+(error.code||error.message||error)));
+        window.cloudSendMessage(message).then(()=>{
+          if(status){
+            status.textContent='🟢 Location sent';
+            status.style.color='#86efac';
+          }
+        }).catch(error=>{
+          if(status){
+            status.textContent='🔴 Location Error: '+(error.code||error.message||error);
+            status.style.color='#fecaca';
+          }
+          alert('Location ပို့မရပါ: '+(error.code||error.message||error));
+        });
       }else{
         data.messages.push({...message,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
         save();
         init();
       }
     },
-    ()=>alert('Location permission ကို Allow လုပ်ပေးပါ။')
+    error=>{
+      const msg=error?.code===1
+        ? 'Location permission ကို Allow လုပ်ပေးပါ။'
+        : 'Location ရယူမရပါ။ GPS / Internet ကို စစ်ပေးပါ။';
+      if(status){
+        status.textContent='🔴 '+msg;
+        status.style.color='#fecaca';
+      }
+      alert(msg);
+    },
+    {enableHighAccuracy:true,timeout:15000,maximumAge:10000}
   );
 }
 
