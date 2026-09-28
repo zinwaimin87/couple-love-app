@@ -285,21 +285,21 @@ function duration(s){
   return y+'y '+m+'m '+d+'d';
 }
 
-function makeTrip(name,dest,date){
-  return {id:Date.now()+Math.random(),name,dest,date,steps:[],finishedAt:null};
+function makeTrip(name,dest,date,budget=0){
+  return {id:Date.now()+Math.random(),name,dest,date,budget:Number(budget||0),steps:[],finishedAt:null};
 }
 
 function normalizeTrips(list){
   const grouped=[];
   (list||[]).forEach(item=>{
     if(Array.isArray(item.steps)){
-      grouped.push({...item,steps:item.steps||[]});
+      grouped.push({...item,budget:Number(item.budget||0),steps:item.steps||[]});
       return;
     }
     const key=(item.name||'')+'|'+(item.dest||'')+'|'+(item.date||'');
     let t=grouped.find(x=>x._legacyKey===key);
     if(!t){
-      t=makeTrip(item.name||'Unnamed Trip',item.dest||'',item.date||'');
+      t=makeTrip(item.name||'Unnamed Trip',item.dest||'',item.date||'',item.budget||0);
       t._legacyKey=key;
     }
     t.steps.push({
@@ -715,6 +715,7 @@ function createTrip(){
   const n=$('tripName').value.trim();
   const d=$('destination').value.trim();
   const date=$('tripDate').value;
+  const budget=Number($('tripBudget')?.value||0);
   const err=$('tripError');
 
   if(!n||!d){
@@ -730,13 +731,14 @@ function createTrip(){
     err.style.display='none';
   }
 
-  const t=makeTrip(n,d,date);
+  const t=makeTrip(n,d,date,budget);
   data.trips.push(t);
   save();
 
   $('tripName').value='';
   $('destination').value='';
   $('tripDate').value='';
+  if($('tripBudget')) $('tripBudget').value='';
 
   window.addEventListener('beforeunload',()=>{ if(unsubscribeRealtimeMessages) unsubscribeRealtimeMessages(); });
 
@@ -899,7 +901,8 @@ function renderTrips(){
         '<div class="trip-destination">📍 '+esc(t.dest)+(t.date?' · 📅 '+esc(t.date):'')+'</div></div>'+
         '<div class="trip-total"><small>စုစုပေါင်း</small><strong>฿'+total.toLocaleString()+'</strong></div>'+
         '</div>'+
-        '<div class="trip-summary"><span>🧭 '+count+' Route'+(count!==1?'s':'')+'</span><span>✓ '+arrived+'/'+count+' Arrived</span></div>'+
+        '<div class="trip-summary"><span>🧭 '+count+' Route'+(count!==1?'s':'')+'</span><span>✓ '+arrived+'/'+count+' Arrived</span><span>🎯 Budget ฿'+Number(t.budget||0).toLocaleString()+'</span></div>'+
+        '<div class="trip-summary"><span>💰 Used ฿'+total.toLocaleString()+'</span><span>Remaining ฿'+Math.max(0,Number(t.budget||0)-total).toLocaleString()+'</span></div>'+
         '<div class="steps">'+steps+'</div>'+
         '<div class="trip-summary"><span>💰 '+esc(catText||'No expenses')+'</span></div>'+
         '<button class="btn finish-btn" onclick="finishTrip('+t.id+')">✓ Finish Trip</button>'+
@@ -922,7 +925,7 @@ function renderFinished(){
       return '<div class="trip trip-group">'+
         '<div class="trip-head"><div><b>✈️ '+esc(t.name)+'</b>'+
         '<div class="muted">'+esc(t.dest)+(t.date?' • '+esc(t.date):'')+'</div></div>'+
-        '<span class="pill">Total ฿'+tripTotal(t).toLocaleString()+'</span></div>'+
+        '<span class="pill">Total ฿'+tripTotal(t).toLocaleString()+(t.budget?' · Budget ฿'+Number(t.budget).toLocaleString():'')+'</span></div>'+
         '<div class="steps">'+steps+'</div>'+
         '<div class="muted" style="margin-top:8px">Finished ✓</div>'+
         '</div>';
