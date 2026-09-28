@@ -57,111 +57,26 @@
 </main>
 
 <script src="app.js"></script>
+<script type="module" src="firebase-client.js"></script>
+<script>
+window.addEventListener("firebase-auth-changed", function(event){
+  const user=event.detail;
+  const status=document.getElementById("ownerStatus");
+  const error=document.getElementById("ownerError");
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-import {
-  getAuth,
-  GoogleAuthProvider,
-  signInWithRedirect,
-  getRedirectResult,
-  onAuthStateChanged,
-  signOut
-} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
-import { firebaseConfig } from "./firebase-config.js";
-
-const firebaseApp = initializeApp(firebaseConfig);
-const auth = getAuth(firebaseApp);
-const provider = new GoogleAuthProvider();
-provider.setCustomParameters({ prompt: "select_account" });
-
-const errorEl = document.getElementById("ownerError");
-const statusEl = document.getElementById("ownerStatus");
-
-function owner(){
-  try{return JSON.parse(localStorage.getItem("coupleOwner")||"null")}catch(e){return null}
-}
-
-function show(message, ok=false){
-  if(!errorEl)return;
-  errorEl.textContent=message;
-  errorEl.style.display="block";
-  errorEl.style.color=ok ? "#86efac" : "#fecaca";
-}
-
-function setOwner(user){
-  const old=owner()||{};
-  const email=(user.email||"").toLowerCase();
-  const saved=(old.gmail||"").toLowerCase();
-
-  if(saved && email!==saved){
-    show("ဒီ Google Gmail က သတ်မှတ်ထားတဲ့ Owner Gmail နဲ့ မတူပါ။");
-    signOut(auth).catch(()=>{});
-    return false;
+  if(user){
+    const saved=(JSON.parse(localStorage.getItem("coupleOwner")||"{}")||{});
+    if(saved.gmail && user.email && saved.gmail.toLowerCase() !== user.email.toLowerCase()){
+      if(error){
+        error.textContent="ဒီ Google Gmail က သတ်မှတ်ထားတဲ့ Owner Gmail နဲ့ မတူပါ။";
+        error.style.display="block";
+      }
+      return;
+    }
+    if(status) status.textContent="✓ Firebase Google Owner Connected: "+user.email;
   }
-
-  const next={
-    ...old,
-    gmail: saved || email,
-    email,
-    name: user.displayName || old.name || "Owner",
-    photoURL: user.photoURL || "",
-    firebaseConnected:true,
-    firebaseUid:user.uid,
-    connectedAt:new Date().toISOString()
-  };
-
-  localStorage.setItem("coupleOwner",JSON.stringify(next));
-  if(window.renderOwnerSettings) window.renderOwnerSettings();
-  if(statusEl) statusEl.textContent="✓ Firebase Google Owner Connected: "+email;
-  show("✓ Firebase နဲ့ Google Owner Account ချိတ်ပြီးပါပြီ။",true);
-  return true;
-}
-
-window.connectOwnerFirebase=async function(){
-  const saved=owner();
-
-  if(!saved?.gmail){
-    show("အရင်ဆုံး Owner Gmail ကို Save လုပ်ပါ။");
-    return;
-  }
-
-  show("Google Sign-In ကို ဖွင့်နေပါတယ်…",true);
-
-  try{
-    await signInWithRedirect(auth,provider);
-  }catch(error){
-    console.error(error);
-    show("Firebase Google Sign-In မအောင်မြင်ပါ: "+(error.code||error.message));
-  }
-};
-
-window.disconnectOwnerFirebase=async function(){
-  try{ await signOut(auth); }catch(error){ console.error(error); }
-
-  const old=owner()||{};
-  delete old.firebaseConnected;
-  delete old.firebaseUid;
-  delete old.photoURL;
-  delete old.email;
-  delete old.connectedAt;
-  localStorage.setItem("coupleOwner",JSON.stringify(old));
-
-  if(window.renderOwnerSettings) window.renderOwnerSettings();
-  show("Firebase Owner connection ဖြုတ်ပြီးပါပြီ။",true);
-};
-
-getRedirectResult(auth).catch(error=>{
-  console.error(error);
-  show("Google Sign-In ပြန်လာရာမှာ error ဖြစ်ပါတယ်: "+(error.code||error.message));
 });
-
-onAuthStateChanged(auth,user=>{
-  if(user) setOwner(user);
-  else if(window.renderOwnerSettings) window.renderOwnerSettings();
-});
-
-if(window.renderOwnerSettings) window.renderOwnerSettings();
+</script>
 </script>
 </body>
 </html>
