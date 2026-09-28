@@ -460,6 +460,9 @@ window.cloudSendMessage = async function(message){
     senderUid:user.uid,
     senderEmail,
     media:typeof message?.media==="string" && !message.media.startsWith("data:") ? message.media : "",
+    lat:typeof message?.lat==="number" ? message.lat : null,
+    lng:typeof message?.lng==="number" ? message.lng : null,
+    accuracy:typeof message?.accuracy==="number" ? message.accuracy : null,
     sentAt:serverTimestamp(),
     deliveredAt:null,
     readAt:null
