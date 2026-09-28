@@ -152,6 +152,8 @@ function tripTotal(t){
 }
 
 function init(){
+  // Login page has its own UI and must not run the main app renderer.
+  if(isLoginPage()) return;
   if(!requireAuth()) return;
 
   if($('name1')){
