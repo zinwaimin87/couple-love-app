@@ -1,3 +1,4 @@
+/* Latest build trigger: 2026-09-28 */
 const $=id=>document.getElementById(id);
 
 let raw=JSON.parse(localStorage.getItem('coupleData')||'{}');
