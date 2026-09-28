@@ -381,7 +381,7 @@ function init(){
     $('chatbox').scrollTop=$('chatbox').scrollHeight;
   }
 
-  if($('ownerGmail')) renderOwnerSettings();
+  if($('ownerGmail')) renderOwnerSettings();\n\n  if($('mediaGallery') && $('mediaGallery').style.display!=='none') renderMediaGallery();
 
   if($('trips')){
     renderTripSelect();
@@ -389,6 +389,34 @@ function init(){
   }
 
   if($('finishedList')) renderFinished();
+}
+
+function renderMediaGallery(){
+  const box=$('mediaGallery');
+  if(!box) return;
+
+  const mediaMessages=(data.messages||[]).filter(m=>
+    (m.kind==='photo'||m.kind==='video') && m.media
+  );
+
+  box.innerHTML=mediaMessages.length
+    ? '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">'+
+      mediaMessages.slice().reverse().map(m=>{
+        if(m.kind==='video'){
+          return '<div style="background:#0b1220;border-radius:12px;overflow:hidden"><video controls playsinline preload="metadata" style="width:100%;display:block" src="'+m.media+'"></video></div>';
+        }
+        return '<a href="'+m.media+'" target="_blank" rel="noopener" style="display:block"><img loading="lazy" src="'+m.media+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;display:block"></a>';
+      }).join('')+
+      '</div>'
+    : '<div class="empty">Photo / Video မရှိသေးပါ။</div>';
+}
+
+function toggleMediaGallery(){
+  const box=$('mediaGallery');
+  if(!box) return;
+  const opening=box.style.display==='none' || !box.style.display;
+  box.style.display=opening?'block':'none';
+  if(opening) renderMediaGallery();
 }
 
 function saveDate(){
