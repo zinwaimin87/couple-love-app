@@ -49,6 +49,41 @@ function createCoupleAccount(){
   location.replace('index.html');
 }
 
+function getOwner(){try{return JSON.parse(localStorage.getItem('coupleOwner')||'null')}catch(e){return null}}
+
+function saveOwnerSettings(){
+  const gmail=($('ownerGmail')?.value||'').trim().toLowerCase();
+  const name=($('ownerName')?.value||'').trim();
+  const err=$('ownerError');
+  if(!gmail || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(gmail)){
+    if(err){err.textContent='မှန်ကန်တဲ့ Gmail address ထည့်ပါ။';err.style.display='block'}
+    return;
+  }
+  localStorage.setItem('coupleOwner',JSON.stringify({gmail,name,connected:false,updatedAt:new Date().toISOString()}));
+  if(err){err.textContent='Owner Gmail ကို ဒီဖုန်းမှာ သိမ်းပြီးပါပြီ။';err.style.display='block';err.style.color='#86efac'}
+  renderOwnerSettings();
+}
+
+function renderOwnerSettings(){
+  const o=getOwner();
+  if($('ownerGmail')) $('ownerGmail').value=o?.gmail||'';
+  if($('ownerName')) $('ownerName').value=o?.name||'';
+  if($('ownerStatus')){
+    $('ownerStatus').textContent=o?.gmail
+      ? 'Owner Gmail: '+o.gmail
+      : 'Owner Gmail မချိတ်ရသေးပါ';
+  }
+}
+
+function connectOwnerGoogle(){
+  const o=getOwner();
+  if(!o?.gmail){
+    alert('အရင်ဆုံး Owner Gmail ကို Save လုပ်ပါ။');
+    return;
+  }
+  alert('Google Login ချိတ်ရန် Google OAuth Client ID configuration လိုအပ်ပါတယ်။ Gmail address ကိုတော့ Owner အဖြစ် ဒီဖုန်းမှာ သိမ်းပြီးပါပြီ။');
+}
+
 function logoutCouple(){
   sessionStorage.removeItem('coupleSession');
   location.replace('login.html');
@@ -192,6 +227,8 @@ function init(){
 
     $('chatbox').scrollTop=$('chatbox').scrollHeight;
   }
+
+  if($('ownerGmail')) renderOwnerSettings();
 
   if($('trips')){
     renderTripSelect();
