@@ -75,13 +75,97 @@ function renderOwnerSettings(){
   }
 }
 
+function getGoogleClientId(){
+  return localStorage.getItem('googleOwnerClientId')||'';
+}
+
+function saveGoogleClientId(){
+  const id=($('googleClientId')?.value||'').trim();
+  const err=$('ownerError');
+  if(!id || !id.endsWith('.apps.googleusercontent.com')){
+    if(err){err.textContent='Google OAuth Client ID မှန်မှန်ထည့်ပါ (…apps.googleusercontent.com)';err.style.display='block';err.style.color='#fecaca'}
+    return;
+  }
+  localStorage.setItem('googleOwnerClientId',id);
+  if(err){err.textContent='Google Client ID သိမ်းပြီးပါပြီ။';err.style.display='block';err.style.color='#86efac'}
+}
+
+function decodeGoogleCredential(credential){
+  try{
+    const parts=credential.split('.');
+    if(parts.length!==3) return null;
+    const base=parts[1].replace(/-/g,'+').replace(/_/g,'/');
+    return JSON.parse(decodeURIComponent(atob(base.padEnd(base.length+((4-base.length%4)%4),'=')).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')));
+  }catch(e){return null}
+}
+
+window.handleOwnerGoogleCredential=function(response){
+  const payload=decodeGoogleCredential(response.credential);
+  const o=getOwner();
+  const err=$('ownerError');
+
+  if(!payload?.email){
+    if(err){err.textContent='Google account information မရပါ။';err.style.display='block';err.style.color='#fecaca'}
+    return;
+  }
+
+  if(o?.gmail && o.gmail.toLowerCase()!==payload.email.toLowerCase()){
+    if(err){err.textContent='ဒီ Google Gmail က သတ်မှတ်ထားတဲ့ Owner Gmail နဲ့ မတူပါ။';err.style.display='block';err.style.color='#fecaca'}
+    return;
+  }
+
+  const owner={
+    gmail:payload.email.toLowerCase(),
+    name:payload.name||o?.name||'Owner',
+    picture:payload.picture||'',
+    googleConnected:true,
+    googleSub:payload.sub||'',
+    connectedAt:new Date().toISOString()
+  };
+
+  localStorage.setItem('coupleOwner',JSON.stringify(owner));
+  renderOwnerSettings();
+  if(err){err.textContent='✓ Google နဲ့ Owner Account ချိတ်ပြီးပါပြီ။';err.style.display='block';err.style.color='#86efac'}
+};
+
 function connectOwnerGoogle(){
   const o=getOwner();
+  const clientId=getGoogleClientId();
+
   if(!o?.gmail){
     alert('အရင်ဆုံး Owner Gmail ကို Save လုပ်ပါ။');
     return;
   }
-  alert('Google Login ချိတ်ရန် Google OAuth Client ID configuration လိုအပ်ပါတယ်။ Gmail address ကိုတော့ Owner အဖြစ် ဒီဖုန်းမှာ သိမ်းပြီးပါပြီ။');
+  if(!clientId){
+    alert('အရင်ဆုံး Google OAuth Client ID ထည့်ပြီး Save လုပ်ပါ။');
+    return;
+  }
+
+  if(!window.google?.accounts?.id){
+    alert('Google Sign-In library မတင်ရသေးပါ။ Page ကို Refresh လုပ်ပြီး ထပ်စမ်းပါ။');
+    return;
+  }
+
+  window.google.accounts.id.initialize({
+    client_id:clientId,
+    callback:window.handleOwnerGoogleCredential,
+    auto_select:false,
+    cancel_on_tap_outside:true
+  });
+
+  window.google.accounts.id.prompt();
+}
+
+function renderOwnerSettings(){
+  const o=getOwner();
+  if($('ownerGmail')) $('ownerGmail').value=o?.gmail||'';
+  if($('ownerName')) $('ownerName').value=o?.name||'';
+  if($('googleClientId')) $('googleClientId').value=getGoogleClientId();
+  if($('ownerStatus')){
+    $('ownerStatus').textContent=o?.googleConnected
+      ? '✓ Google Owner Connected: '+o.gmail
+      : (o?.gmail ? 'Owner Gmail: '+o.gmail : 'Owner Gmail မချိတ်ရသေးပါ');
+  }
 }
 
 function logoutCouple(){
