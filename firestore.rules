@@ -24,7 +24,11 @@ service cloud.firestore {
           request.auth.token.email == email
           || (
             exists(/databases/$(database)/documents/coupleMembers/$(request.auth.token.email))
-            && get(/databases/$(database)/documents/coupleMembers/$(request.auth.token.email)).data.ownerUid != null
+            && get(/databases/$(database)/documents/couples/$(get(/databases/$(database)/documents/coupleMembers/$(request.auth.token.email)).data.ownerUid)).data.get('ownerGmail','') == request.auth.token.email
+            && (
+              email == get(/databases/$(database)/documents/couples/$(get(/databases/$(database)/documents/coupleMembers/$(request.auth.token.email)).data.ownerUid)).data.get('ownerGmail','')
+              || email == get(/databases/$(database)/documents/couples/$(get(/databases/$(database)/documents/coupleMembers/$(request.auth.token.email)).data.ownerUid)).data.get('partnerGmail','')
+            )
           )
         );
 
