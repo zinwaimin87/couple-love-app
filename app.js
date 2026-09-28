@@ -417,8 +417,11 @@ async function sendMsg(){
 
   try{
     if(window.cloudSendMessage && window.firebaseUser?.()){
+      const status=$('presenceStatus');
+      if(status) status.textContent='☁️ Sending…';
       await window.cloudSendMessage(message);
       input.value='';
+      if(status) status.textContent='🟢 Message sent';
       return;
     }
 
@@ -431,7 +434,13 @@ async function sendMsg(){
     init();
   }catch(error){
     console.error(error);
-    alert('Message ပို့မရပါ: '+(error.code||error.message||error));
+    const detail=error?.code||error?.message||String(error);
+    const status=$('presenceStatus');
+    if(status){
+      status.textContent='🔴 Send Error: '+detail;
+      status.style.color='#fecaca';
+    }
+    alert('Message ပို့မရပါ\n\n'+detail);
   }
 }
 
@@ -766,7 +775,15 @@ function startRealtimeMessages(){
   if(unsubscribeRealtimeMessages) unsubscribeRealtimeMessages();
   if(!window.cloudSubscribeMessages || !window.firebaseUser?.()) return;
 
-  unsubscribeRealtimeMessages=window.cloudSubscribeMessages(async messages=>{
+  unsubscribeRealtimeMessages=window.cloudSubscribeMessages(async (messages,error)=>{
+    if(error){
+      const status=$('presenceStatus');
+      if(status){
+        status.textContent='🔴 Chat Error: '+(error.code||error.message||error);
+        status.style.color='#fecaca';
+      }
+      return;
+    }
     if(!Array.isArray(messages)) return;
     data.messages=messages;
 
