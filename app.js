@@ -115,6 +115,35 @@ function logoutCouple(){
   location.replace('login.html');
 }
 
+async function syncCloudNow(){
+  const status=$('cloudSyncStatus');
+  const setStatus=(msg,ok=false)=>{
+    if(status){
+      status.textContent=msg;
+      status.style.color=ok?'#86efac':'';
+    }
+  };
+
+  if(!window.firebaseUser || !window.firebaseUser()){
+    setStatus('⚠️ Firebase Owner အဖြစ် Google နဲ့ အရင် Connect လုပ်ပါ။');
+    return;
+  }
+
+  try{
+    setStatus('☁️ Cloud Sync စစ်နေပါတယ်...');
+    await window.cloudSaveCoupleData(getLocalCoupleData());
+    const remote=await window.cloudLoadCoupleData();
+    if(remote){
+      setStatus('✓ Firestore Cloud Sync အလုပ်လုပ်နေပါပြီ။ '+new Date().toLocaleTimeString(),true);
+    }else{
+      setStatus('⚠️ Firestore document မတွေ့သေးပါ။');
+    }
+  }catch(error){
+    console.error(error);
+    setStatus('❌ Cloud Sync Error: '+(error.code||error.message||error));
+  }
+}
+
 if(!isLoginPage()) requireAuth();
 
 function esc(s){
