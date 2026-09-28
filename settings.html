@@ -6,11 +6,13 @@
   <div class="form">
     <input class="input" id="ownerName" placeholder="Owner Name">
     <input class="input" id="ownerGmail" type="email" inputmode="email" autocomplete="email" placeholder="Owner Gmail">
+    <input class="input" id="googleClientId" placeholder="Google OAuth Client ID">
     <div id="ownerStatus" class="muted">Owner Gmail မချိတ်ရသေးပါ</div>
     <button class="btn" onclick="saveOwnerSettings()">💾 Save Owner Gmail</button>
+    <button class="back" style="width:100%;justify-content:center" onclick="saveGoogleClientId()">🔐 Save Google Client ID</button>
     <button class="back" style="width:100%;justify-content:center" onclick="connectOwnerGoogle()">🔗 Connect with Google</button>
     <div id="ownerError" class="error-note"></div>
   </div>
-  <p class="muted" style="margin-top:10px">မှတ်ချက် — Gmail ကို Owner အဖြစ်သိမ်းနိုင်ပါသည်။ Google OAuth နဲ့ တကယ်ဝင်ရောက်/အကောင့်ချိတ်ရန် Google Cloud OAuth Client ID ကို ထပ်မံသတ်မှတ်ရပါမည်။</p>
+  <p class="muted" style="margin-top:10px">Google နဲ့ တကယ်ချိတ်ရန် Google Cloud မှာ Web OAuth Client ID တစ်ခုဖန်တီးပြီး အပေါ်မှာထည့်ပါ။ Client ID က secret မဟုတ်ပါ။</p>
 </section>
-</main><script src="app.js"></script></body></html>
+</main><script src="https://accounts.google.com/gsi/client" async defer></script><script src="app.js"></script></body></html>
