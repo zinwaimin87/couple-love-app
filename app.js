@@ -240,6 +240,35 @@ function save(){
   }
 }
 
+function nextAnniversaryInfo(start){
+  if(!start) return null;
+  const base=new Date(start+'T00:00:00');
+  if(Number.isNaN(base.getTime())) return null;
+
+  const now=new Date();
+  let target=new Date(now.getFullYear(),base.getMonth(),base.getDate());
+
+  // Handle Feb 29 anniversaries in non-leap years by using Feb 28.
+  if(base.getMonth()===1 && base.getDate()===29 && target.getMonth()!==1){
+    target=new Date(now.getFullYear(),1,28);
+  }
+  if(target<=now){
+    target=new Date(now.getFullYear()+1,base.getMonth(),base.getDate());
+    if(base.getMonth()===1 && base.getDate()===29 && target.getMonth()!==1){
+      target=new Date(now.getFullYear()+1,1,28);
+    }
+  }
+
+  const diff=Math.max(0,target-now);
+  const days=Math.floor(diff/86400000);
+  const hours=Math.floor((diff%86400000)/3600000);
+  const mins=Math.floor((diff%3600000)/60000);
+  const secs=Math.floor((diff%60000)/1000);
+
+  return {target,days,hours,mins,secs};
+}
+window.nextAnniversaryInfo=nextAnniversaryInfo;
+
 function duration(s){
   let a=new Date(s),b=new Date();
   let y=b.getFullYear()-a.getFullYear();
