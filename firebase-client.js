@@ -162,6 +162,18 @@ window.cloudSaveCoupleData = async function(localData){
 
   const payload = JSON.parse(JSON.stringify(localData || {}));
   delete payload.owner;
+
+  if (Array.isArray(payload.messages)) {
+    payload.messages = payload.messages.map(message => {
+      const copy = { ...message };
+      if (typeof copy.media === "string" && copy.media.startsWith("data:")) {
+        delete copy.media;
+        copy.mediaPending = true;
+      }
+      return copy;
+    });
+  }
+
   await setDoc(doc(db, "couples", user.uid), {
     ...payload,
     ownerUid: user.uid,
