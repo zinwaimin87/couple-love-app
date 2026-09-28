@@ -3,6 +3,7 @@ import {
   getAuth,
   GoogleAuthProvider,
   signInWithRedirect,
+  signInWithPopup,
   getRedirectResult,
   onAuthStateChanged,
   signOut
@@ -60,13 +61,13 @@ window.connectOwnerFirebase = async function(){
     errorEl.style.color = ok ? "#86efac" : "#fecaca";
   };
 
-  if (!owner?.gmail) {
-    show("အရင်ဆုံး Owner Gmail ကို Save လုပ်ပါ။");
+  if (!owner?.gmail && !owner?.partnerGmail) {
+    show("အရင်ဆုံး Owner Gmail သို့မဟုတ် Partner Gmail ကို Save လုပ်ပါ။");
     return;
   }
 
   try {
-    await signInWithRedirect(auth, provider);
+    await signInWithPopup(auth, provider);
   } catch (error) {
     console.error(error);
     show("Firebase Google Sign-In မအောင်မြင်ပါ: " + (error.code || error.message));
