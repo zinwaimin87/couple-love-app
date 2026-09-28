@@ -93,10 +93,10 @@ function renderTripSelect(){
 }
 function renderTrips(){
   $('trips').innerHTML=data.trips.length?data.trips.map(t=>{
-    const total=tripTotal(t);
-    const steps=t.steps.length?t.steps.map((s,i)=>'<div class="trip-step"><div><b>'+((i+1)+'. ')+esc(s.route)+'</b><div class="muted">'+esc(s.type)+' • ฿'+Number(s.expense||0).toLocaleString()+(s.arrivedAt?' • Arrived ✓':'')+'</div></div>'+(s.arrivedAt?'<span class="pill">Arrived</span>':'<button class="btn small" onclick="markArrived('+t.id+','+s.id+')">Arrived ✓</button>')+'</div>').join(''):'<div class="empty">ဒီခရီးစဉ်အတွက် လမ်းကြောင်းမထည့်ရသေးပါ။</div>';
-    return '<div class="trip trip-group"><div class="trip-head"><div><b>✈️ '+esc(t.name)+'</b><div class="muted">'+esc(t.dest)+(t.date?' • '+esc(t.date):'')+'</div></div><span class="pill">Total ฿'+total.toLocaleString()+'</span></div><div class="steps">'+steps+'</div><button class="btn" onclick="finishTrip('+t.id+')">Finish Trip ✓</button></div>';
-  }).join(''):'<div class="empty">No active trips.</div>';
+    const total=tripTotal(t), count=t.steps.length, arrived=t.steps.filter(s=>s.arrivedAt).length;
+    const steps=t.steps.length?t.steps.map((s,i)=>'<div class="route-row"><div class="route-no">'+(i+1)+'</div><div class="route-main"><b>'+esc(s.route)+'</b><div class="route-meta"><span>'+esc(s.type)+'</span><span>฿'+Number(s.expense||0).toLocaleString()+'</span></div></div><div class="route-status">'+(s.arrivedAt?'<span class="pill">✓ Arrived</span>':'<button class="btn small" onclick="markArrived('+t.id+','+s.id+')">Arrived</button>')+'</div></div>').join(''):'<div class="empty">ဒီခရီးစဉ်အတွက် Route မထည့်ရသေးပါ။ အပေါ်က Add Route Step ကိုသုံးပါ။</div>';
+    return '<div class="trip trip-group"><div class="trip-head"><div><div class="trip-name">✈️ '+esc(t.name)+'</div><div class="trip-destination">📍 '+esc(t.dest)+(t.date?' · 📅 '+esc(t.date):'')+'</div></div><div class="trip-total"><small>စုစုပေါင်း</small><strong>฿'+total.toLocaleString()+'</strong></div></div><div class="trip-summary"><span>🧭 '+count+' Route'+(count!==1?'s':'')+'</span><span>✓ '+arrived+'/'+count+' Arrived</span></div><div class="steps">'+steps+'</div><button class="btn finish-btn" onclick="finishTrip('+t.id+')">✓ Finish Trip</button></div>';
+  }).join(''):'<div class="empty">လက်ရှိသွားမည့်ခရီးစဉ် မရှိသေးပါ။</div>';
 }
 function renderFinished(){
   $('finishedList').innerHTML=data.finished.length?data.finished.slice().reverse().map(t=>{
