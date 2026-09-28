@@ -28,9 +28,9 @@
 <a class="dash-tile tile-settings" href="settings.html"><div class="tile-icon">⚙</div><div class="tile-copy"><h3>Settings</h3><p>Names & preferences</p></div><span class="tile-arrow">→</span></a>
 </section>
 </main>
-<script src="app.js"></script>
+<script src="app.js?v=20260928-3"></script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(console.warn));}</script>
-<script type="module" src="firebase-client.js"></script>
+<script type="module" src="firebase-client.js?v=20260928-3"></script>
 <script>
 function updateAnniversaryTop(){
  const el=$('anniversaryTop'); if(el) el.textContent=data.start?duration(data.start):'Anniversary';
