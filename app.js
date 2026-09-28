@@ -55,9 +55,17 @@ function sendMsg(){let v=$('chatInput').value.trim();if(!v)return;data.messages.
 
 function createTrip(){
   const n=$('tripName').value.trim(),d=$('destination').value.trim(),date=$('tripDate').value;
-  if(!n||!d){alert('ခရီးစဉ်အမည်နဲ့ သွားမယ့်နေရာ ထည့်ပါ');return}
-  const t=makeTrip(n,d,date);data.trips.push(t);save();
-  $('tripName').value='';$('destination').value='';$('tripDate').value='';init();
+  const err=$('tripError');
+  if(!n||!d){
+    if(err){err.textContent=!n?'⚠️ ခရီးစဉ်အမည် ထည့်ပေးပါ။':'⚠️ သွားမည့်နေရာ ထည့်ပေးပါ။';err.style.display='block'}
+    return;
+  }
+  if(err){err.textContent='';err.style.display='none'}
+  const t=makeTrip(n,d,date);
+  data.trips.push(t);
+  save();
+  $('tripName').value='';$('destination').value='';$('tripDate').value='';
+  init();
   $('tripSelect').value=String(t.id);
 }
 function addRouteStep(){
