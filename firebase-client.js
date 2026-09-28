@@ -101,6 +101,11 @@ async function startPresence(user){
 
   if(!partnerEmail) return;
 
+  if(window.__presenceHeartbeat) clearInterval(window.__presenceHeartbeat);
+  window.__presenceHeartbeat=setInterval(()=>{
+    setDoc(presenceRef,{online:true,lastSeen:serverTimestamp()},{merge:true}).catch(()=>{});
+  },30000);
+
   if(unsubscribePresence) unsubscribePresence();
   const partnerRef=doc(db,"couplePresence",partnerEmail);
   unsubscribePresence=onSnapshot(partnerRef,snap=>{
