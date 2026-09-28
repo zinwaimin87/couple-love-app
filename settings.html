@@ -85,15 +85,20 @@ window.addEventListener("firebase-auth-changed", function(event){
   if(user){
     let saved={};
     try{ saved=JSON.parse(localStorage.getItem("coupleOwner")||"{}")||{}; }catch(e){}
-    if(saved.gmail && user.email && saved.gmail.toLowerCase()!==user.email.toLowerCase()){
+    const userEmail=(user.email||"").toLowerCase();
+    const ownerEmail=(saved.gmail||"").toLowerCase();
+    const partnerEmail=(saved.partnerGmail||"").toLowerCase();
+    if((ownerEmail||partnerEmail) && userEmail!==ownerEmail && userEmail!==partnerEmail){
       if(error){
-        error.textContent="ဒီ Google Gmail က သတ်မှတ်ထားတဲ့ Owner Gmail နဲ့ မတူပါ။";
+        error.textContent="ဒီ Google Gmail က Owner/Partner Gmail မဟုတ်ပါ။";
         error.style.display="block";
         error.style.color="#fecaca";
       }
       return;
     }
-    if(status) status.textContent="✓ Firebase Google Owner Connected: "+user.email;
+    if(status) status.textContent=userEmail===partnerEmail
+      ? "✓ Firebase Google Partner Connected: "+user.email
+      : "✓ Firebase Google Owner Connected: "+user.email;
     const fs=document.getElementById("firebaseStatus");
     if(fs){ fs.textContent="✓ Firebase Google Auth Connected · "+user.email; fs.style.color="#86efac"; }
   }
