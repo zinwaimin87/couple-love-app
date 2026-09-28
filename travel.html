@@ -1,42 +1,101 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Travel</title><link rel="stylesheet" href="style.css"></head>
-<body><main class="shell">
-<header class="top"><div class="brand">OUR LITTLE UNIVERSE<small>TRAVEL PLANNER</small></div><div class="orb">✈️</div></header>
-<a class="back" href="index.html">← Dashboard</a>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Travel Planner · Our Little Universe</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="shell travel-v2">
+<header class="travel-nav">
+  <a class="travel-back" href="index.html">‹</a>
+  <div class="travel-brand"><b>OUR LITTLE UNIVERSE</b><span>TRAVEL PLANNER</span></div>
+  <div class="travel-orb">✈️</div>
+</header>
 
-<section class="hero travel-hero">
-<div class="eyebrow">TRAVEL</div><h1>Our Trips ✈️</h1>
-<p class="muted">ခရီးစဉ်တစ်ခုကို အမည်တစ်ခုအောက်မှာ လမ်းကြောင်းအဆင့်ဆင့်နဲ့ ကုန်ကျစရိတ်အားလုံးကို စုစည်းထားနိုင်ပါတယ်။</p>
+<section class="travel-cover">
+  <div class="cover-copy">
+    <span class="travel-kicker">OUR NEXT ADVENTURE</span>
+    <h1>Let's go somewhere<br><em>together.</em> ✈️</h1>
+    <p>ခရီးစဉ်၊ လမ်းကြောင်းနဲ့ ကုန်ကျစရိတ်အားလုံးကို တစ်နေရာတည်းမှာ စုစည်းထားပါ။</p>
+  </div>
+  <div class="cover-orbit"><span>🧭</span></div>
 </section>
 
-<section class="card travel-create" style="margin-top:11px">
-<div class="section-title"><div><span class="section-icon">🗺️</span><div><h3>ခရီးစဉ်အသစ်</h3><div class="muted">အရင်ဆုံး ခရီးစဉ်အမည်ဖန်တီးပါ</div></div></div></div>
-<div id="tripError" class="error-note"></div>
-<div class="form">
-<label class="muted">ခရီးစဉ်အမည်</label><input class="input" id="tripName" placeholder="ဥပမာ Bangkok Trip" required>
-<label class="muted">သွားမည့်နေရာ</label><input class="input" id="destination" placeholder="ဥပမာ Bangkok" required>
-<label class="muted">ခရီးစဉ်ရက်စွဲ</label><input class="input" id="tripDate" type="date"><label class="muted">ခရီးစဉ် Budget (฿)</label><input class="input" id="tripBudget" type="number" min="0" placeholder="5000 (THB)">
-<button class="btn primary-action" onclick="createTrip()">＋ Create Trip</button>
+<section class="travel-stats">
+  <div class="travel-stat"><small>ACTIVE TRIPS</small><strong id="travelStatTrips">—</strong><span>ခရီးစဉ်</span></div>
+  <div class="travel-stat"><small>SPENDING</small><strong id="travelStatSpent">฿0</strong><span>စုစုပေါင်း</span></div>
+  <div class="travel-stat"><small>ROUTES</small><strong id="travelStatRoutes">0</strong><span>လမ်းကြောင်း</span></div>
+</section>
+
+<div class="travel-layout">
+<section class="travel-panel">
+  <div class="travel-panel-head">
+    <div class="travel-icon">🗺️</div>
+    <div><span>NEW TRIP</span><h2>ခရီးစဉ်အသစ်</h2><p>ခရီးစဉ်အတွက် အခြေခံအချက်အလက်တွေထည့်ပါ</p></div>
+  </div>
+  <div id="tripError" class="error-note"></div>
+  <div class="travel-form">
+    <div class="travel-field"><label>ခရီးစဉ်အမည်</label><input class="input" id="tripName" placeholder="Bangkok Weekend"></div>
+    <div class="travel-field"><label>သွားမည့်နေရာ</label><input class="input" id="destination" placeholder="Bangkok"></div>
+    <div class="travel-two">
+      <div class="travel-field"><label>ရက်စွဲ</label><input class="input" id="tripDate" type="date"></div>
+      <div class="travel-field"><label>Budget (฿)</label><input class="input" id="tripBudget" type="number" min="0" placeholder="5000"></div>
+    </div>
+    <button class="btn travel-main-btn" onclick="createTrip()">Create Trip <span>→</span></button>
+  </div>
+</section>
+
+<section class="travel-panel">
+  <div class="travel-panel-head">
+    <div class="travel-icon">🚗</div>
+    <div><span>ROUTE & EXPENSE</span><h2>လမ်းကြောင်းထည့်မယ်</h2><p>သွားလာမှုတိုင်းကို အဆင့်လိုက်မှတ်တမ်းတင်ပါ</p></div>
+  </div>
+  <div class="travel-form">
+    <div class="travel-field"><label>ရွေးထားသောခရီးစဉ်</label><select class="input" id="tripSelect"><option value="">— ခရီးစဉ်ရွေးပါ —</option></select></div>
+    <div class="travel-field"><label>လမ်းကြောင်း</label><input class="input" id="route" placeholder="Pattaya → Bangkok"></div>
+    <div class="travel-two">
+      <div class="travel-field"><label>ကုန်ကျစရိတ် (฿)</label><input class="input" id="expense" type="number" min="0" placeholder="160"></div>
+      <div class="travel-field"><label>အမျိုးအစား</label><select class="input" id="expenseType"><option>Transport</option><option>Food</option><option>Hotel</option><option>Tickets</option><option>Fuel</option><option>Shopping</option><option>Other</option></select></div>
+    </div>
+    <div class="travel-two">
+      <button class="btn travel-main-btn" onclick="addRouteStep()">＋ Add Route</button>
+      <button class="btn travel-location-btn" onclick="useCurrentLocation()">📍 Current Location</button>
+    </div>
+  </div>
+</section>
 </div>
-</section>
 
-<section class="card" style="margin-top:11px">
-<div class="section-title"><div><span class="section-icon">🚗</span><div><h3>လမ်းကြောင်း + ကုန်ကျစရိတ်</h3><div class="muted">ရွေးထားတဲ့ခရီးစဉ်အောက်မှာ အဆင့်လိုက်ထည့်ပါ</div></div></div></div>
-<div class="form">
-<label class="muted">ခရီးစဉ်</label>
-<select class="input" id="tripSelect"><option value="">— ခရီးစဉ်ရွေးပါ —</option></select>
-<label class="muted">လမ်းကြောင်း / ကားအဆင့်</label>
-<input class="input" id="route" placeholder="ဥပမာ Pattaya → Bangkok">
-<div class="two-inputs">
-<div><label class="muted">ကုန်ကျစရိတ် (฿)</label><input class="input" id="expense" type="number" min="0" placeholder="160"></div>
-<div><label class="muted">အမျိုးအစား</label><select class="input" id="expenseType"><option>Transport</option><option>Food</option><option>Hotel</option><option>Tickets</option><option>Fuel</option><option>Shopping</option><option>Other</option></select></div>
-</div>
-<div class="two-inputs"><button class="btn primary-action" onclick="addRouteStep()">＋ Add Route Step</button><button class="btn primary-action" onclick="useCurrentLocation()">📍 Add Current Location</button></div>
-</div>
+<section class="travel-panel travel-trips-panel">
+  <div class="travel-panel-head">
+    <div class="travel-icon">🧳</div>
+    <div><span>MY JOURNEYS</span><h2>သွားမည့်ခရီးစဉ်များ</h2><p>Budget, route, spending နဲ့ Arrived status အားလုံးကို ကြည့်နိုင်ပါတယ်</p></div>
+  </div>
+  <div id="trips"></div>
 </section>
-
-<section class="card active-wrap" style="margin-top:11px">
-<div class="section-title"><div><span class="section-icon">🧳</span><div><h3>သွားမည့်ခရီးစဉ်များ</h3><div class="muted">Route အားလုံးနဲ့ စုစုပေါင်းကုန်ကျစရိတ်</div></div></div></div>
-<div id="trips"></div>
-</section>
-</main><script src="app.js"></script><script type="module" src="firebase-client.js"></script></body></html>
+</main>
+<script src="app.js"></script>
+<script>
+(function(){
+  function refreshTravelStats(){
+    try{
+      const raw=JSON.parse(localStorage.getItem('coupleData')||'{}');
+      const trips=Array.isArray(raw.trips)?raw.trips:[];
+      let spent=0,routes=0;
+      trips.forEach(t=>(t.steps||[]).forEach(s=>{routes++;spent+=Number(s.expense||0)}));
+      const a=document.getElementById('travelStatTrips');
+      const b=document.getElementById('travelStatSpent');
+      const c=document.getElementById('travelStatRoutes');
+      if(a)a.textContent=trips.length;
+      if(b)b.textContent='฿'+spent.toLocaleString();
+      if(c)c.textContent=routes;
+    }catch(e){}
+  }
+  refreshTravelStats();
+  setInterval(refreshTravelStats,1200);
+})();
+</script>
+<script type="module" src="firebase-client.js"></script>
+</body>
+</html>
