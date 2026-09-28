@@ -344,7 +344,10 @@ function init(){
     $('chatbox').innerHTML=data.messages.map(m=>{
       let media='';
       if(m.kind==='photo'&&m.media)
-        media='<img src="'+m.media+'" style="max-width:100%;border-radius:12px;margin-top:6px">';
+        media='<img src="'+m.media+'" loading="lazy" style="max-width:100%;border-radius:12px;margin-top:6px">';
+
+      if(m.kind==='video'&&m.media)
+        media='<video controls playsinline preload="metadata" style="width:100%;max-height:360px;border-radius:12px;margin-top:6px" src="'+m.media+'"></video>';
 
       if(m.kind==='location'&&m.media)
         media='<a class="back" style="display:inline-flex;margin-top:6px" target="_blank" rel="noopener" href="'+m.media+'">📍 Open Location</a>';
@@ -480,6 +483,60 @@ async function addPhoto(input){
   }catch(error){
     console.error(error);
     alert('Photo upload မအောင်မြင်ပါ။ Firebase Storage ကို Enable လုပ်ထားရမလား စစ်ပေးပါ။');
+  }finally{
+    input.value='';
+  }
+}
+
+async function addVideo(input){
+  const file=input.files?.[0];
+  if(!file) return;
+
+  if(!file.type.startsWith('video/')){
+    alert('Video file ကိုရွေးပေးပါ။');
+    input.value='';
+    return;
+  }
+
+  if(file.size > 50 * 1024 * 1024){
+    alert('Video size ကို 50MB အောက်ထားပေးပါ။');
+    input.value='';
+    return;
+  }
+
+  try{
+    let media='';
+    if(window.firebaseUser?.() && window.cloudUploadFile){
+      media=await window.cloudUploadFile(file,'videos');
+    }else{
+      media=await new Promise((resolve,reject)=>{
+        const reader=new FileReader();
+        reader.onload=()=>resolve(reader.result);
+        reader.onerror=reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    const message={
+      text:'🎬 Video',
+      sender:currentSender(),
+      kind:'video',
+      media
+    };
+
+    if(window.cloudSendMessage && window.firebaseUser?.()){
+      await window.cloudSendMessage(message);
+    }else{
+      data.messages.push({
+        ...message,
+        time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
+      });
+      save();
+      init();
+    }
+  }catch(error){
+    console.error(error);
+    alert('Video upload မအောင်မြင်ပါ။ Firebase Storage ကို Enable လုပ်ထားရမလား စစ်ပေးပါ။');
   }finally{
     input.value='';
   }
