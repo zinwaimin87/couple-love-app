@@ -1,3 +1,4 @@
+const $=id=>document.getElementById(id);
 let raw=JSON.parse(localStorage.getItem('coupleData')||'{}');
 let data={start:raw.start||'',names:Array.isArray(raw.names)?raw.names:['',''],messages:Array.isArray(raw.messages)?raw.messages:[],trips:[],finished:[]};
 
