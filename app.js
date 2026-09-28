@@ -771,9 +771,7 @@ function createTrip(){
   $('tripDate').value='';
   if($('tripBudget')) $('tripBudget').value='';
 
-  window.addEventListener('beforeunload',()=>{ if(unsubscribeRealtimeMessages) unsubscribeRealtimeMessages(); });
-
-init();
+  init();
 
   if($('tripSelect')) $('tripSelect').value=String(t.id);
 }
@@ -1060,6 +1058,32 @@ window.addEventListener('firebase-auth-changed', async function(event){
       window.__cloudHydrating=false;
     });
   }
+});
+
+/* Global action exports + runtime diagnostics */
+window.saveDate=saveDate;
+window.saveNames=saveNames;
+window.createTrip=createTrip;
+window.addRouteStep=addRouteStep;
+window.useCurrentLocation=useCurrentLocation;
+window.markArrived=markArrived;
+window.editRouteStep=editRouteStep;
+window.deleteRouteStep=deleteRouteStep;
+window.finishTrip=finishTrip;
+window.sendMsg=sendMsg;
+window.addPhoto=addPhoto;
+window.addVideo=addVideo;
+window.shareLocation=shareLocation;
+window.startVoice=typeof startVoice==='function'?startVoice:undefined;
+window.toggleMediaGallery=toggleMediaGallery;
+window.saveOwnerSettings=saveOwnerSettings;
+window.syncCloudNow=syncCloudNow;
+window.checkFirebaseNow=checkFirebaseNow;
+
+window.addEventListener('error', function(e){
+  console.error('Our Little Universe runtime error:', e.error || e.message);
+  const status=document.getElementById('appRuntimeStatus');
+  if(status) status.textContent='⚠️ App Error: '+(e.message||'Unknown JavaScript error');
 });
 
 init();
