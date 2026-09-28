@@ -37,7 +37,37 @@ window.firebaseAuth = auth;
 window.firebaseApp = app;
 
 let currentUser = null;
+let cloudUid = null;
 let unsubscribeCloud = null;
+
+function getSavedOwner(){
+  try { return JSON.parse(localStorage.getItem("coupleOwner") || "{}") || {}; }
+  catch(e) { return {}; }
+}
+
+function emailKey(email){
+  return String(email || "").trim().toLowerCase();
+}
+
+async function resolveCloudUid(user){
+  if (!user) return null;
+  const owner = getSavedOwner();
+  if (owner.firebaseUid && user.uid === owner.firebaseUid) return user.uid;
+
+  const email = emailKey(user.email);
+  if (!email) return null;
+
+  try {
+    const memberSnap = await getDoc(doc(db, "coupleMembers", email));
+    if (memberSnap.exists()) {
+      const mapped = memberSnap.data();
+      if (mapped.ownerUid) return mapped.ownerUid;
+    }
+  } catch(error) {
+    console.warn("Partner mapping lookup:", error?.code || error?.message || error);
+  }
+  return null;
+}
 
 window.firebaseUser = () => currentUser;
 
@@ -50,10 +80,7 @@ window.firebaseReady = new Promise(resolve => {
 });
 
 window.connectOwnerFirebase = async function(){
-  const owner = (() => {
-    try { return JSON.parse(localStorage.getItem("coupleOwner") || "null"); }
-    catch(e) { return null; }
-  })();
+  const owner = getSavedOwner();
 
   const errorEl = document.getElementById("ownerError");
   const show = (msg, ok=false) => {
@@ -134,10 +161,7 @@ async function applyAuthenticatedOwner(user){
     return;
   }
 
-  const owner = (() => {
-    try { return JSON.parse(localStorage.getItem("coupleOwner") || "null"); }
-    catch(e) { return null; }
-  })() || {};
+  const owner = getSavedOwner();
 
   const email = (user.email || "").toLowerCase();
   const saved = (owner.gmail || "").toLowerCase();
@@ -153,9 +177,11 @@ async function applyAuthenticatedOwner(user){
     return;
   }
 
+  const isOwnerAccount = !owner.firebaseUid || user.uid === owner.firebaseUid;
   const next = {
     ...owner,
-    gmail: saved || email,
+    gmail: isOwnerAccount ? (saved || email) : (owner.gmail || saved || ""),
+
     email,
     name: user.displayName || owner.name || "Owner",
     photoURL: user.photoURL || "",
@@ -165,13 +191,17 @@ async function applyAuthenticatedOwner(user){
   };
 
   localStorage.setItem("coupleOwner", JSON.stringify(next));
+  cloudUid = await resolveCloudUid(user);
+  if (!cloudUid && isOwnerAccount) cloudUid = user.uid;
   if (window.renderOwnerSettings) window.renderOwnerSettings();
 
   const status = document.getElementById("ownerStatus");
   if (status) status.textContent = "✓ Firebase Google Owner Connected: " + email;
 
   try {
-    await ensureCloudDocument(user.uid);
+    if (isOwnerAccount) {
+      await ensureCloudDocument(user.uid);
+    }
   } catch (error) {
     console.error("Firestore owner document:", error);
     const errorEl = document.getElementById("ownerError");
@@ -186,21 +216,36 @@ async function applyAuthenticatedOwner(user){
 async function ensureCloudDocument(uid){
   const refDoc = doc(db, "couples", uid);
   const snap = await getDoc(refDoc);
+  const owner = getSavedOwner();
+  const partnerGmail = emailKey(owner.partnerGmail || "");
+
   if (!snap.exists()) {
     const local = window.getLocalCoupleData ? window.getLocalCoupleData() : null;
     if (local) {
       await setDoc(refDoc, {
         ...local,
         ownerUid: uid,
+        partnerGmail,
         updatedAt: serverTimestamp()
       });
     }
+  } else if (owner.firebaseUid === uid && partnerGmail) {
+    await setDoc(refDoc, { partnerGmail, ownerUid: uid, updatedAt: serverTimestamp() }, {merge:true});
+  }
+
+  if (owner.firebaseUid === uid && partnerGmail) {
+    await setDoc(doc(db, "coupleMembers", partnerGmail), {
+      ownerUid: uid,
+      partnerGmail,
+      updatedAt: serverTimestamp()
+    }, {merge:true});
   }
 }
 
 window.cloudSaveCoupleData = async function(localData){
   const user = currentUser;
-  if (!user) return {ok:false, reason:"not-authenticated"};
+  const uid = cloudUid || (user && user.uid);
+  if (!user || !uid) return {ok:false, reason:"not-authenticated"};
 
   const payload = JSON.parse(JSON.stringify(localData || {}));
   delete payload.owner;
@@ -216,9 +261,10 @@ window.cloudSaveCoupleData = async function(localData){
     });
   }
 
-  await setDoc(doc(db, "couples", user.uid), {
+  await setDoc(doc(db, "couples", uid), {
     ...payload,
-    ownerUid: user.uid,
+    ownerUid: getSavedOwner().firebaseUid || uid,
+    partnerGmail: emailKey(getSavedOwner().partnerGmail || ""),
     updatedAt: serverTimestamp()
   }, {merge:true});
 
@@ -227,19 +273,20 @@ window.cloudSaveCoupleData = async function(localData){
 
 window.cloudLoadCoupleData = async function(){
   const user = currentUser;
-  if (!user) return null;
+  const uid = cloudUid || (user && user.uid);
+  if (!user || !uid) return null;
 
-  const snap = await getDoc(doc(db, "couples", user.uid));
+  const snap = await getDoc(doc(db, "couples", uid));
   if (!snap.exists()) return null;
   return snap.data();
 };
 
 window.cloudSubscribeCoupleData = function(callback){
   if (unsubscribeCloud) unsubscribeCloud();
-  if (!currentUser) return () => {};
+  if (!currentUser || !cloudUid) return () => {};
 
   unsubscribeCloud = onSnapshot(
-    doc(db, "couples", currentUser.uid),
+    doc(db, "couples", cloudUid),
     snap => {
       if (snap.exists() && callback) callback(snap.data());
     },
