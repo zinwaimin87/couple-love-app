@@ -5,6 +5,8 @@ import {
   signInWithRedirect,
   getRedirectResult,
   onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence,
   signOut
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 import {
@@ -72,6 +74,7 @@ window.connectOwnerFirebase = async function(){
       errorEl.style.display = "block";
       errorEl.style.color = "#fde68a";
     }
+    await setPersistence(auth, browserLocalPersistence);
     await signInWithRedirect(auth, provider);
   } catch (error) {
     console.error(error);
@@ -144,7 +147,17 @@ async function applyAuthenticatedOwner(user){
   const status = document.getElementById("ownerStatus");
   if (status) status.textContent = "✓ Firebase Google Owner Connected: " + email;
 
-  await ensureCloudDocument(user.uid);
+  try {
+    await ensureCloudDocument(user.uid);
+  } catch (error) {
+    console.error("Firestore owner document:", error);
+    const errorEl = document.getElementById("ownerError");
+    if (errorEl) {
+      errorEl.textContent = "✓ Google/Firebase ချိတ်ပြီးပါပြီ။ Firestore Sync မှာသာ စစ်ဆေးရန်လိုနေပါတယ်: " + (error.code || error.message);
+      errorEl.style.display = "block";
+      errorEl.style.color = "#fde68a";
+    }
+  }
 }
 
 async function ensureCloudDocument(uid){
@@ -228,7 +241,11 @@ window.cloudUploadFile = async function(file, folder="media"){
   return await getDownloadURL(fileRef);
 };
 
-getRedirectResult(auth).catch(error => {
+getRedirectResult(auth).then(result => {
+  if (result && result.user) {
+    return applyAuthenticatedOwner(result.user);
+  }
+}).catch(error => {
   console.error("Firebase redirect result:", error);
   const errorEl = document.getElementById("ownerError");
   if (errorEl) {
