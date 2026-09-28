@@ -16,6 +16,26 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+
+    match /couplePresence/{email} {
+      allow get: if request.auth != null
+        && request.auth.token.email_verified == true
+        && (
+          request.auth.token.email == email
+          || (
+            exists(/databases/$(database)/documents/coupleMembers/$(request.auth.token.email))
+            && get(/databases/$(database)/documents/coupleMembers/$(request.auth.token.email)).data.ownerUid != null
+          )
+        );
+
+      allow create, update: if request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == email;
+
+      allow list: if false;
+      allow delete: if request.auth != null && request.auth.token.email == email;
+    }
+
     match /couples/{uid} {
       function signedIn() {
         return request.auth != null;
