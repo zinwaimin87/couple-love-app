@@ -7,10 +7,10 @@
 <section class="card">
 <h3>✈️ Create a Trip</h3>
 <div class="muted">ခရီးစဉ်အမည်တစ်ခုအောက်မှာ လမ်းကြောင်းအဆင့်ဆင့်နဲ့ ကုန်ကျစရိတ်တွေကို ထည့်နိုင်ပါတယ်။</div>
-<div class="form" style="margin-top:10px">
-<input class="input" id="tripName" placeholder="ခရီးစဉ်အမည် (ဥပမာ Bangkok Trip)">
-<input class="input" id="destination" placeholder="သွားမည့်နေရာ">
-<input class="input" id="tripDate" type="date">
+<div id="tripError" class="muted" style="display:none;color:#fca5a5;margin-top:10px"></div><div class="form" style="margin-top:10px">
+<label class="muted">ခရီးစဉ်အမည်</label><input class="input" id="tripName" placeholder="ဥပမာ Bangkok Trip" required>
+<label class="muted">သွားမည့်နေရာ</label><input class="input" id="destination" placeholder="ဥပမာ Bangkok" required>
+<label class="muted">ခရီးစဉ်ရက်စွဲ</label><input class="input" id="tripDate" type="date">
 <button class="btn" onclick="createTrip()">+ Create Trip</button>
 </div>
 </section>
