@@ -281,6 +281,7 @@ async function ensureCloudDocument(uid){
   const refDoc = doc(db, "couples", uid);
   const snap = await getDoc(refDoc);
   const owner = getSavedOwner();
+  const ownerGmail = emailKey(owner.gmail || "");
   const partnerGmail = emailKey(owner.partnerGmail || "");
 
   if (!snap.exists()) {
@@ -397,8 +398,30 @@ function messageCollection(){
 
 window.cloudSendMessage = async function(message){
   const user=currentUser;
-  const uid=cloudUid || (user && user.uid);
-  if(!user || !uid) throw new Error("Firebase login လိုအပ်ပါတယ်။");
+  if(!user) throw new Error("Firebase login လိုအပ်ပါတယ်။");
+
+  let uid=cloudUid || user.uid;
+
+  // Re-resolve the shared couple document before every message send.
+  // This prevents a stale/new browser session from trying to write to the
+  // wrong couple path.
+  if(!cloudUid){
+    cloudUid=await resolveCloudUid(user);
+    if(!cloudUid && emailKey(user.email)===emailKey(getSavedOwner().gmail)){
+      cloudUid=user.uid;
+    }
+    uid=cloudUid || user.uid;
+  }
+
+  // The message rules depend on couples/{uid} existing.
+  const coupleSnap=await getDoc(doc(db,"couples",uid));
+  if(!coupleSnap.exists()){
+    if(uid===user.uid){
+      await ensureCloudDocument(uid);
+    }else{
+      throw new Error("Couple Cloud document မတွေ့သေးပါ။ Owner account နဲ့ တစ်ကြိမ် Connect + Cloud Sync လုပ်ပါ။");
+    }
+  }
 
   const senderEmail=emailKey(user.email);
   const payload={
@@ -413,8 +436,13 @@ window.cloudSendMessage = async function(message){
     readAt:null
   };
 
-  const refDoc=await addDoc(collection(db,"couples",uid,"messages"),payload);
-  return {ok:true,id:refDoc.id};
+  try{
+    const refDoc=await addDoc(collection(db,"couples",uid,"messages"),payload);
+    return {ok:true,id:refDoc.id};
+  }catch(error){
+    console.error("cloudSendMessage:",error);
+    throw error;
+  }
 };
 
 window.cloudSubscribeMessages = function(callback){
