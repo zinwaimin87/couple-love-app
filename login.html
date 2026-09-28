@@ -1,1 +1,76 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07111f"><title>Couple Login · Our Little Universe</title><link rel="stylesheet" href="style.css"></head><body><main class="shell auth-shell"><section class="hero auth-card"><div class="orb auth-orb">♡</div><div class="eyebrow">PRIVATE COUPLE SPACE</div><h1>Our Little Universe</h1><p class="muted">နှစ်ယောက်အတွက် သီးသန့်ဝင်ရောက်ရန် Couple Code နှင့် PIN ထည့်ပါ။</p><div class="form"><input class="input" id="coupleCode" placeholder="Couple Code" autocomplete="username"><input class="input" id="pin" type="password" inputmode="numeric" maxlength="6" placeholder="PIN" autocomplete="current-password"><button class="btn primary-action" onclick="loginCouple()">♡ Enter Our Universe</button><div id="loginError" class="error-note"></div></div><div class="auth-divider">ပထမဆုံးအသုံးပြုခြင်းဆိုရင်</div><button class="back" style="width:100%;justify-content:center" onclick="showSetup()">＋ Couple Account ဖန်တီးမယ်</button></section><section id="setupCard" class="card auth-card" style="display:none"><h3>✨ Couple Account Setup</h3><p class="muted">ဒီအဆင့်မှာ ဖုန်းထဲမှာ Couple profile တစ်ခု စတင်ဖန်တီးမယ်။ Cloud Sync ကို နောက်အဆင့်မှာ ချိတ်ပေးမယ်။</p><div class="form"><input class="input" id="setupCode" placeholder="Couple Code (ဥပမာ: ZWKM2026)"><div class="two-inputs"><input class="input" id="setupName1" placeholder="Your name"><input class="input" id="setupName2" placeholder="Partner name"></div><input class="input" id="setupPin" type="password" inputmode="numeric" maxlength="6" placeholder="4–6 digit PIN"><input class="input" id="setupStart" type="date"><button class="btn primary-action" onclick="createCoupleAccount()">Create Couple Account</button><div id="setupError" class="error-note"></div></div></section></main><script src="app.js"></script><script>function showSetup(){document.getElementById('setupCard').style.display='block';document.getElementById('setupCard').scrollIntoView({behavior:'smooth'})}</script></body></html>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07111f"><title>Couple Login · Our Little Universe</title><link rel="stylesheet" href="style.css"></head><body><main class="shell auth-shell"><section class="hero auth-card"><div class="orb auth-orb">♡</div><div class="eyebrow">PRIVATE COUPLE SPACE</div><h1>Our Little Universe</h1><p class="muted">နှစ်ယောက်အတွက် သီးသန့်ဝင်ရောက်ရန် Couple Code နှင့် PIN ထည့်ပါ။</p><div class="form"><input class="input" id="coupleCode" placeholder="Couple Code" autocomplete="username"><input class="input" id="pin" type="password" inputmode="numeric" maxlength="6" placeholder="PIN" autocomplete="current-password"><button class="btn primary-action" onclick="loginCouple()">♡ Enter Our Universe</button><div id="loginError" class="error-note"></div></div><div class="auth-divider">ပထမဆုံးအသုံးပြုခြင်းဆိုရင်</div><button class="back" style="width:100%;justify-content:center" onclick="showSetup()">＋ Couple Account ဖန်တီးမယ်</button></section><section id="setupCard" class="card auth-card" style="display:none"><h3>✨ Couple Account Setup</h3><p class="muted">ဒီအဆင့်မှာ ဖုန်းထဲမှာ Couple profile တစ်ခု စတင်ဖန်တီးမယ်။ Cloud Sync ကို နောက်အဆင့်မှာ ချိတ်ပေးမယ်။</p><div class="form"><input class="input" id="setupCode" placeholder="Couple Code (ဥပမာ: ZWKM2026)"><div class="two-inputs"><input class="input" id="setupName1" placeholder="Your name"><input class="input" id="setupName2" placeholder="Partner name"></div><input class="input" id="setupPin" type="password" inputmode="numeric" maxlength="6" placeholder="4–6 digit PIN"><input class="input" id="setupStart" type="date"><button class="btn primary-action" onclick="createCoupleAccount()">Create Couple Account</button><div id="setupError" class="error-note"></div></div></section></main><script>
+(function(){
+  const $=id=>document.getElementById(id);
+
+  function showError(id,msg){
+    const el=$(id);
+    if(el){ el.textContent=msg; el.style.display='block'; }
+  }
+
+  window.showSetup=function(){
+    const card=$('setupCard');
+    if(!card)return;
+    card.style.display='block';
+    requestAnimationFrame(()=>card.scrollIntoView({behavior:'smooth',block:'center'}));
+  };
+
+  window.loginCouple=function(){
+    const code=($('coupleCode').value||'').trim().toUpperCase();
+    const pin=$('pin').value||'';
+    let auth=null;
+
+    try{ auth=JSON.parse(localStorage.getItem('coupleAuth')||'null'); }catch(e){ auth=null; }
+
+    if(!auth){
+      showError('loginError','ဒီဖုန်းမှာ Couple Account မရှိသေးပါ။ အောက်က Setup ကို အရင်လုပ်ပါ။');
+      return;
+    }
+
+    if(code!==String(auth.code||'').toUpperCase() || pin!==String(auth.pin||'')){
+      showError('loginError','Couple Code သို့မဟုတ် PIN မမှန်ပါ။');
+      return;
+    }
+
+    sessionStorage.setItem('coupleSession','1');
+    window.location.replace('index.html');
+  };
+
+  window.createCoupleAccount=function(){
+    const code=($('setupCode').value||'').trim().toUpperCase();
+    const n1=($('setupName1').value||'').trim();
+    const n2=($('setupName2').value||'').trim();
+    const pin=$('setupPin').value||'';
+    const start=$('setupStart').value||'';
+
+    if(!code||!n1||!n2||!start||!/^[0-9]{4,6}$/.test(pin)){
+      showError('setupError','Code, နှစ်ယောက်အမည်, PIN (4–6 လုံး) နဲ့ Relationship Start Date အားလုံးဖြည့်ပါ။');
+      return;
+    }
+
+    localStorage.setItem('coupleAuth',JSON.stringify({code:code,pin:pin}));
+    let raw={};
+    try{ raw=JSON.parse(localStorage.getItem('coupleData')||'{}'); }catch(e){ raw={}; }
+
+    raw.start=start;
+    raw.names=[n1,n2];
+    raw.messages=Array.isArray(raw.messages)?raw.messages:[];
+    raw.trips=Array.isArray(raw.trips)?raw.trips:[];
+    raw.finished=Array.isArray(raw.finished)?raw.finished:[];
+
+    localStorage.setItem('coupleData',JSON.stringify(raw));
+    sessionStorage.setItem('coupleSession','1');
+    window.location.replace('index.html');
+  };
+
+  document.addEventListener('DOMContentLoaded',function(){
+    const pin=$('pin');
+    const setupPin=$('setupPin');
+
+    [pin,setupPin].forEach(el=>{
+      if(el) el.addEventListener('input',function(){
+        this.value=this.value.replace(/\\D/g,'').slice(0,6);
+      });
+    });
+  });
+})();
+</script></body></html>
