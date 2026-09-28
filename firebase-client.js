@@ -2,6 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/fireba
 import {
   getAuth,
   GoogleAuthProvider,
+  signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
   onAuthStateChanged,
@@ -75,7 +76,14 @@ window.connectOwnerFirebase = async function(){
       errorEl.style.color = "#fde68a";
     }
     await setPersistence(auth, browserLocalPersistence);
-    await signInWithRedirect(auth, provider);
+    provider.setCustomParameters({
+      prompt: "select_account",
+      login_hint: owner.gmail || owner.partnerGmail || ""
+    });
+    const result = await signInWithPopup(auth, provider);
+    if (result && result.user) {
+      await applyAuthenticatedOwner(result.user);
+    }
   } catch (error) {
     console.error(error);
     show("Firebase Google Sign-In မအောင်မြင်ပါ: " + (error.code || error.message));
