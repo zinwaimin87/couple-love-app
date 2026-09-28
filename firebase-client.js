@@ -284,17 +284,25 @@ async function ensureCloudDocument(uid){
       await setDoc(refDoc, {
         ...local,
         ownerUid: uid,
+        ownerGmail,
         partnerGmail,
         updatedAt: serverTimestamp()
       });
     }
   } else if (owner.firebaseUid === uid && partnerGmail) {
-    await setDoc(refDoc, { partnerGmail, ownerUid: uid, updatedAt: serverTimestamp() }, {merge:true});
+    await setDoc(refDoc, { ownerGmail, partnerGmail, ownerUid: uid, updatedAt: serverTimestamp() }, {merge:true});
   }
 
   if (owner.firebaseUid === uid && partnerGmail) {
     await setDoc(doc(db, "coupleMembers", partnerGmail), {
       ownerUid: uid,
+      partnerGmail,
+      updatedAt: serverTimestamp()
+    }, {merge:true});
+
+    await setDoc(doc(db, "coupleMembers", ownerGmail), {
+      ownerUid: uid,
+      ownerGmail,
       partnerGmail,
       updatedAt: serverTimestamp()
     }, {merge:true});
