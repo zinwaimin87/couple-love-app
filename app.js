@@ -350,6 +350,34 @@ function tripTotal(t){
   return (t.steps||[]).reduce((sum,s)=>sum+Number(s.expense||0),0);
 }
 
+function deleteRouteStep(tripId,stepId){
+  const t=data.trips.find(x=>String(x.id)===String(tripId));
+  if(!t) return;
+  const index=t.steps.findIndex(s=>String(s.id)===String(stepId));
+  if(index<0) return;
+  if(!confirm('ဒီ Route Step ကို ဖျက်မလား?')) return;
+  t.steps.splice(index,1);
+  save();
+  init();
+}
+
+function editRouteStep(tripId,stepId){
+  const t=data.trips.find(x=>String(x.id)===String(tripId));
+  const s=t?.steps.find(x=>String(x.id)===String(stepId));
+  if(!s) return;
+  const route=prompt('Route / လမ်းကြောင်း',s.route||'');
+  if(route===null) return;
+  const expense=prompt('ကုန်ကျစရိတ် (฿)',String(s.expense||0));
+  if(expense===null) return;
+  const type=prompt('အမျိုးအစား (Transport / Food / Hotel / Tickets / Fuel / Shopping / Other)',s.type||'Transport');
+  if(type===null) return;
+  s.route=route.trim();
+  s.expense=Math.max(0,Number(expense)||0);
+  s.type=type.trim()||'Other';
+  save();
+  init();
+}
+
 function init(){
   // Login page has its own UI and must not run the main app renderer.
   if(isLoginPage()) return;
@@ -890,6 +918,8 @@ function renderTrips(){
           (s.arrivedAt
             ?'<span class="pill">✓ Arrived</span>'
             :'<button class="btn small" onclick="markArrived('+t.id+','+s.id+')">Arrived</button>')+
+          '<button class="btn small" onclick="editRouteStep('+t.id+','+s.id+')" style="margin-left:4px">✎</button>'+
+          '<button class="btn small" onclick="deleteRouteStep('+t.id+','+s.id+')" style="margin-left:4px">🗑</button>'+
           '</div>'+
           '</div>'
         ).join('')
@@ -902,7 +932,10 @@ function renderTrips(){
         '<div class="trip-total"><small>စုစုပေါင်း</small><strong>฿'+total.toLocaleString()+'</strong></div>'+
         '</div>'+
         '<div class="trip-summary"><span>🧭 '+count+' Route'+(count!==1?'s':'')+'</span><span>✓ '+arrived+'/'+count+' Arrived</span><span>🎯 Budget ฿'+Number(t.budget||0).toLocaleString()+'</span></div>'+
-        '<div class="trip-summary"><span>💰 Used ฿'+total.toLocaleString()+'</span><span>Remaining ฿'+Math.max(0,Number(t.budget||0)-total).toLocaleString()+'</span></div>'+
+        '<div class="trip-summary"><span>💰 Used ฿'+total.toLocaleString()+'</span><span>'+((Number(t.budget||0)>0&&total>Number(t.budget||0))?'⚠️ Over Budget ฿'+(total-Number(t.budget||0)).toLocaleString():'Remaining ฿'+Math.max(0,Number(t.budget||0)-total).toLocaleString())+'</span></div>'+
+        (Number(t.budget||0)>0
+          ?'<div style="margin:8px 0 12px"><div style="height:8px;border-radius:99px;background:rgba(255,255,255,.10);overflow:hidden"><div style="height:100%;width:'+Math.min(100,(total/Number(t.budget||0))*100)+'%;background:linear-gradient(90deg,#38bdf8,#a78bfa);border-radius:99px"></div></div><div class="muted" style="font-size:12px;margin-top:5px;text-align:right">'+Math.round((total/Number(t.budget||0))*100)+'% used</div></div>'
+          :'')+
         '<div class="steps">'+steps+'</div>'+
         '<div class="trip-summary"><span>💰 '+esc(catText||'No expenses')+'</span></div>'+
         '<button class="btn finish-btn" onclick="finishTrip('+t.id+')">✓ Finish Trip</button>'+
